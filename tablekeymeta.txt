@@ -2,3 +2,4 @@ a sa
 sd d
 test col1
 generated _id
+t1 col1
