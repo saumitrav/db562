@@ -585,26 +585,42 @@ public class entryClass {
 				String s[] = name.split(" ");
 				System.out.println("Enter value for " + s[0]);
 				// type check start
-				if (Integer.parseInt(s[1]) == 1 || Integer.parseInt(s[1]) == 2) {
+				if (Integer.parseInt(s[1]) == 1) {
 					loop = true;
 					while (loop) {
 						try {
-							value = sc.nextLong();
+							value = sc.nextInt();
+							sc.nextLine();
 							loop = false;
 						} catch (InputMismatchException e) {
 							System.out.println("Invalid value!");
-							sc.next();
+							sc.nextLine();
 						}
 					}
-				} else if (Integer.parseInt(s[1]) == 5) {
+				}
+				else if (Integer.parseInt(s[1]) == 2) {
+					loop = true;
+					while (loop) {
+						try {
+							value = sc.nextFloat();
+							sc.nextLine();
+							loop = false;
+						} catch (InputMismatchException e) {
+							System.out.println("Invalid value!");
+							sc.nextLine();
+						}
+					}
+				}
+				else if (Integer.parseInt(s[1]) == 5) {
 					loop = true;
 					while (loop) {
 						try {
 							value = sc.nextBoolean();
+							sc.nextLine();
 							loop = false;
 						} catch (InputMismatchException e) {
 							System.out.println("Invalid value!");
-							sc.next();
+							sc.nextLine();
 						}
 					}
 				} else {
