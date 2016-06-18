@@ -138,13 +138,15 @@ public class entryClass {
 				sortTable();
 				break;
 			case "10":
-				scan.close();
 				break;
 			default:
 				System.out.println("Invalid Entry");
 				break;
 
 			}
+			if(!option.equals("10")){
+			System.out.println("\n\nPress ENTER to Continue");
+			System.in.read();}
 
 		} while (!option.equals("10"));
 	}
@@ -451,7 +453,7 @@ public class entryClass {
 										}
 									}
 								} else {
-									value = sc.next();
+									value = sc.nextLine();
 								}
 								//
 
@@ -590,7 +592,7 @@ public class entryClass {
 						}
 					}
 				} else {
-					value = sc.next();
+					value = sc.nextLine();
 				}
 				// type check ends
 
@@ -599,7 +601,7 @@ public class entryClass {
 			}
 			br.close();
 			
-			if (list.contains(newObj.get(pkey).toString())) {
+			if (content.size()!=0 && list.contains(newObj.get(pkey).toString())) {
 				System.out.println("Primary key already exist. Record cannot be added.");
 			} else {
 				content.add(newObj);
@@ -640,25 +642,41 @@ public class entryClass {
 	private static void createTable() throws IOException {
 
 		Scanner sc = new Scanner(System.in);
-		int dt;
+		String dt;
 		System.out.println("Enter the Table Name");
 		String tname = sc.next();
+		ArrayList<String> types = new ArrayList<String>();
+		types.add("1");
+		types.add("2");
+		types.add("3");
+		types.add("4");
+		types.add("5");
+		ArrayList<String> colNames = new ArrayList<String>();
+		int slen=0;
 		if (tablename.contains(tname))
 			System.out.println("Table already Exist");
 
 		else {
 			BufferedWriter br = new BufferedWriter(new FileWriter(tname + "_meta.txt"));
 			System.out.println("Enter number of columns in the Table");
-			int count = sc.nextInt();
+			int count = sc.nextInt();//todo
 			sc.reset();
 			System.out.println("Available Datatypes Integer(1) Float(2) String(3) Date(4) Boolean(5)");
 			for (int i = 0; i < count; i++) {
+				String line;
+				sc.nextLine();
+				do{
 				System.out.println("Enter Column Name");
-				String line = sc.next();
+				line = sc.nextLine();
+					String s[] = line.split(" ");
+					slen=s.length;
+				}while(slen>1);
+				
+				colNames.add(line);
 				do {
 					System.out.println("Enter Datatype Value e.g 1 for Integer : ");
-					dt = sc.nextInt();
-				} while (dt > 5);
+					dt = sc.next();
+				} while (!types.contains(dt));
 				br.write(line + " " + dt);
 				br.newLine();
 
@@ -672,8 +690,12 @@ public class entryClass {
 			FileWriter fw = new FileWriter(tname + ".json");
 			fw.write("[]");
 			fw.close();
-			System.out.println("What is the primary key for this Table: ");
-			String primkey = sc.next();
+			String primkey;
+			sc.nextLine();
+			do {
+				System.out.println("What is the primary key for this Table: ");
+				primkey = sc.nextLine();
+			} while (!colNames.contains(primkey));
 			tablekey.put(tname, primkey);
 			tablename.add(tname);
 			System.out.println("New Table " + tname + " Created. ");
