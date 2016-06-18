@@ -393,6 +393,7 @@ public class entryClass {
 		System.out.println("Enter Table Name: ");
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
+		sc.nextLine();
 		String name;
 		String pkey = "";
 		Object value = null;
@@ -405,6 +406,7 @@ public class entryClass {
 		} else {
 			System.out.println("Enter Primary key Value: ");
 			String prim = sc.next();
+			sc.nextLine();
 			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
 			while ((name = br.readLine()) != null) {
 				String s[] = name.split(" ");
@@ -421,7 +423,7 @@ public class entryClass {
 				for (int i = 0; i < len; i++) {
 
 					obj = (JSONObject) content.get(i);
-					if (obj.get(pkey).equals(prim)) {
+					if (obj.get(pkey).toString().equals(prim)) {
 						JSONObject newObj = new JSONObject();
 						newObj.put(pkey, prim);
 						BufferedReader brmeta = new BufferedReader(new FileReader(tname + "_meta.txt"));
@@ -439,7 +441,7 @@ public class entryClass {
 											loop = false;
 										} catch (InputMismatchException e) {
 											System.out.println("Invalid value!");
-											sc.next();
+											sc.nextLine();
 										}
 									}
 								}
@@ -452,7 +454,7 @@ public class entryClass {
 											loop = false;
 										} catch (InputMismatchException e) {
 											System.out.println("Invalid value!");
-											sc.next();
+											sc.nextLine();
 										}
 									}
 								}
@@ -465,7 +467,7 @@ public class entryClass {
 											loop = false;
 										} catch (InputMismatchException e) {
 											System.out.println("Invalid value!");
-											sc.next();
+											sc.nextLine();
 										}
 									}
 								} else {
@@ -546,6 +548,7 @@ public class entryClass {
 		System.out.println("Enter Table Name: ");
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
+		sc.nextLine();
 		String name;
 		String pkey = null;
 		String keyline;
