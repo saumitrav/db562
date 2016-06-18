@@ -393,6 +393,7 @@ public class entryClass {
 		System.out.println("Enter Table Name: ");
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
+		sc.nextLine();
 		String name;
 		String pkey = "";
 		Object value = null;
@@ -431,26 +432,42 @@ public class entryClass {
 							if (!s[0].equals(pkey)) {
 								System.out.println("Enter value for " + s[0]);
 								//
-								if (Integer.parseInt(s[1]) == 1 || Integer.parseInt(s[1]) == 2) {
+								if (Integer.parseInt(s[1]) == 1) {
 									loop = true;
 									while (loop) {
 										try {
-											value = sc.nextLong();
+											value = sc.nextInt();
+											sc.nextLine();
 											loop = false;
 										} catch (InputMismatchException e) {
 											System.out.println("Invalid value!");
-											sc.next();
+											sc.nextLine();
 										}
 									}
-								} else if (Integer.parseInt(s[1]) == 5) {
+								}
+								else if (Integer.parseInt(s[1]) == 2) {
+									loop = true;
+									while (loop) {
+										try {
+											value = sc.nextFloat();
+											sc.nextLine();
+											loop = false;
+										} catch (InputMismatchException e) {
+											System.out.println("Invalid value!");
+											sc.nextLine();
+										}
+									}
+								}
+								else if (Integer.parseInt(s[1]) == 5) {
 									loop = true;
 									while (loop) {
 										try {
 											value = sc.nextBoolean();
+											sc.nextLine();
 											loop = false;
 										} catch (InputMismatchException e) {
 											System.out.println("Invalid value!");
-											sc.next();
+											sc.nextLine();
 										}
 									}
 								} else {
@@ -532,6 +549,7 @@ public class entryClass {
 		System.out.println("Enter Table Name: ");
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
+		sc.nextLine();
 		String name;
 		String pkey = null;
 		String keyline;
