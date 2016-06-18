@@ -430,22 +430,38 @@ public class entryClass {
 							if (!s[0].equals(pkey)) {
 								System.out.println("Enter value for " + s[0]);
 								//
-								if (Integer.parseInt(s[1]) == 1 || Integer.parseInt(s[1]) == 2) {
+								if (Integer.parseInt(s[1]) == 1) {
 									loop = true;
 									while (loop) {
 										try {
-											value = sc.nextLong();
+											value = sc.nextInt();
+											sc.nextLine();
 											loop = false;
 										} catch (InputMismatchException e) {
 											System.out.println("Invalid value!");
 											sc.next();
 										}
 									}
-								} else if (Integer.parseInt(s[1]) == 5) {
+								}
+								else if (Integer.parseInt(s[1]) == 2) {
+									loop = true;
+									while (loop) {
+										try {
+											value = sc.nextFloat();
+											sc.nextLine();
+											loop = false;
+										} catch (InputMismatchException e) {
+											System.out.println("Invalid value!");
+											sc.next();
+										}
+									}
+								}
+								else if (Integer.parseInt(s[1]) == 5) {
 									loop = true;
 									while (loop) {
 										try {
 											value = sc.nextBoolean();
+											sc.nextLine();
 											loop = false;
 										} catch (InputMismatchException e) {
 											System.out.println("Invalid value!");
