@@ -529,7 +529,7 @@ public class entryClass {
 				for (int i = 0; i < len; i++) {
 
 					obj = (JSONObject) content.get(i);
-					if (!obj.get(pkey).equals(prim)) {
+					if (!obj.get(pkey).toString().equals(prim)) {
 						list.add(obj);
 					}
 				}
