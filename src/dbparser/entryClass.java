@@ -352,10 +352,14 @@ public class entryClass {
 		System.out.println("Enter Table Name: ");
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
+		sc.nextLine();
 		String name;
 		ArrayList<String> list = new ArrayList<>();
 		JSONParser parser = new JSONParser();
 		JSONObject obj = new JSONObject();
+		String displaylist;
+		boolean listflag=false;
+		ArrayList<String>colname=new ArrayList<>();
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't Exist");
@@ -368,7 +372,33 @@ public class entryClass {
 			}
 			br.close();
 			for (int i = 0; i < list.size(); i++) {
-				System.out.print(list.get(i) + "\t\t\t\t\t");
+				System.out.print(list.get(i) + "\t");
+			}
+			//
+			System.out.println("\nenter column names to be displayed");
+			displaylist=sc.nextLine();
+			String s[] = displaylist.split(" ");
+			
+			if (s[0].toLowerCase().equals("all") && s.length==1) {			
+				listflag = false;
+			}
+			else{
+				listflag=true;
+				for(int i=0;i<s.length;i++)
+				{
+					colname.add(s[i]);
+				}
+				
+			}
+			//
+			for (int i = 0; i < list.size(); i++) {
+				if(listflag==true){
+					if(colname.contains(list.get(i))){
+				System.out.print(list.get(i) + "\t\t\t");}
+				}
+				else{
+					System.out.print(list.get(i) + "\t\t\t");
+				}
 			}
 			System.out.println();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
@@ -377,7 +407,13 @@ public class entryClass {
 				for (int i = 0; i < len; i++) {
 					obj = (JSONObject) content.get(i);
 					for (int j = 0; j < list.size(); j++) {
-						System.out.print(obj.get(list.get(j)) + "\t\t\t");
+						if(listflag==true ){
+							if(colname.contains(list.get(j))){
+						System.out.print(obj.get(list.get(j)) + "\t\t\t");}
+						}
+						else{
+							System.out.print(obj.get(list.get(j)) + "\t\t\t");
+						}
 					}
 					System.out.println();
 
@@ -594,7 +630,7 @@ public class entryClass {
 					while (loop) {
 						try {
 							value = sc.nextInt();
-							sc.next();
+							sc.nextLine();
 							loop = false;
 						} catch (InputMismatchException e) {
 							System.out.println("Invalid value!");
@@ -607,7 +643,7 @@ public class entryClass {
 					while (loop) {
 						try {
 							value = sc.nextFloat();
-							sc.next();
+							sc.nextLine();
 							loop = false;
 						} catch (InputMismatchException e) {
 							System.out.println("Invalid value!");
@@ -620,7 +656,7 @@ public class entryClass {
 					while (loop) {
 						try {
 							value = sc.nextBoolean();
-							sc.next();
+							sc.nextLine();
 							loop = false;
 						} catch (InputMismatchException e) {
 							System.out.println("Invalid value!");
