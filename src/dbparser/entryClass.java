@@ -254,7 +254,7 @@ public class entryClass {
 					for (int i = 0; i < len; i++) {
 						for (int k = 0; k < len; k++) {
 							obj = (JSONObject) content.get(k);
-							if (obj.get(pkey) == sortedList.get(i)) {
+							if (obj.get(pkey).toString().equals(sortedList.get(i))) {
 								flag2 = true;
 								break;
 							}
