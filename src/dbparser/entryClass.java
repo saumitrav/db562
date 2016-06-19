@@ -851,13 +851,10 @@ public class entryClass {
 							sc.nextLine();
 							date = format.parse(value.toString());
 							loop = false;
-						} catch (InputMismatchException e) {
+						} catch (InputMismatchException |java.text.ParseException e) {
 							System.out.println("Invalid value!");
 							sc.nextLine();
-						} catch (java.text.ParseException e) {
-							System.out.println("Invalid value!");
-							sc.nextLine();
-						}
+						} 
 					}
 				} 
 				else {
@@ -904,6 +901,7 @@ public class entryClass {
 			System.out.println("Table does not exist!");
 		else {
 			tablename.remove(tname);
+			tablekey.remove(tname);
 			File file = new File(tname + "_meta.txt");
 			if (file.exists())
 				file.delete();
@@ -923,6 +921,7 @@ public class entryClass {
 		String dt;
 		System.out.println("Enter the table name:");
 		String tname = sc.next();
+		sc.nextLine();
 		ArrayList<String> types = new ArrayList<String>();
 		types.add("1");
 		types.add("2");
@@ -931,13 +930,26 @@ public class entryClass {
 		types.add("5");
 		ArrayList<String> colNames = new ArrayList<String>();
 		int slen=0;
+		int count=0;
+		boolean loop=true;
 		if (tablename.contains(tname))
 			System.out.println("Table already exists!");
 
 		else {
 			BufferedWriter br = new BufferedWriter(new FileWriter(tname + "_meta.txt"));
 			System.out.println("Enter the number of columns in the table:");
-			int count = sc.nextInt();
+			loop=true;
+			while(loop){
+			try{
+			count = sc.nextInt();
+			loop=false;
+			}
+			catch(java.util.InputMismatchException e)
+			{
+				System.out.println("Input type can only be Integer, Please enter again");
+				sc.nextLine();
+			}
+			}
 			sc.reset();
 			System.out.println("Available data types: Integer(1) Float(2) String(3) Date(4) Boolean(5)");
 			for (int i = 0; i < count; i++) {
@@ -949,11 +961,11 @@ public class entryClass {
 					String s[] = line.split(" ");
 					slen=s.length;
 				}while(slen>1);
-				
+				line=line.trim();
 				colNames.add(line);
 				do {
 					System.out.println("Enter Datatype Value e.g 1 for Integer : ");
-					dt = sc.next();
+					dt = sc.next().trim();
 				} while (!types.contains(dt));
 				br.write(line + " " + dt);
 				br.newLine();
