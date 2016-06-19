@@ -215,15 +215,21 @@ public class entryClass {
 
 			if (flag) {
 				ArrayList<String> list = new ArrayList<>();
-				ArrayList<String> sortedList = new ArrayList<>();
+				ArrayList<String> sortedListStr = new ArrayList<>();
+				ArrayList<Integer> sortedListInt = new ArrayList<>();
+				ArrayList<Float> sortedListFlo = new ArrayList<>();
 				JSONParser parser = new JSONParser();
 				JSONObject obj = new JSONObject();
 				BufferedReader br2 = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				int checkDataType = 0;
 
 				// get the fields in the table into list
 				while ((name = br2.readLine()) != null) {
 					String s[] = name.split(" ");
 					list.add(s[0]);
+					if (s[0].equals(pkey)) {
+	                    checkDataType = Integer.parseInt(s[1]);
+	                }
 				}
 				br2.close();
 
@@ -232,7 +238,13 @@ public class entryClass {
 				if (content != null) {
 					for (int i = 0; i < len; i++) {
 						obj = (JSONObject) content.get(i);
-						sortedList.add(obj.get(pkey).toString());
+						if(checkDataType == 1){
+							sortedListInt.add(Integer.parseInt(obj.get(pkey).toString()));
+						}else if(checkDataType == 2){
+							sortedListFlo.add(Float.parseFloat(obj.get(pkey).toString()));
+						}else{
+							sortedListStr.add(obj.get(pkey).toString());
+						}
 					}
 					System.out.println("Enter the following for displaying the contents sorted based on primary key:");
 					while (true) {
@@ -240,10 +252,22 @@ public class entryClass {
 						String choice = sc.next();
 
 						if (choice.equals("1")) {
-							Collections.sort(sortedList);
+							if(checkDataType == 1){
+								Collections.sort(sortedListInt);
+							}else if(checkDataType == 2){
+								Collections.sort(sortedListFlo);
+							}else{
+								Collections.sort(sortedListStr);
+							}
 							break;
 						} else if (choice.equals("2")) {
-							Collections.sort(sortedList, Collections.reverseOrder());
+							if(checkDataType == 1){
+								Collections.sort(sortedListInt, Collections.reverseOrder());
+							}else if(checkDataType == 2){
+								Collections.sort(sortedListFlo, Collections.reverseOrder());
+							}else{
+								Collections.sort(sortedListStr, Collections.reverseOrder());
+							}
 							break;
 						} else {
 							System.out.println("Enter either 1 or 2!");
@@ -260,9 +284,22 @@ public class entryClass {
 					for (int i = 0; i < len; i++) {
 						for (int k = 0; k < len; k++) {
 							obj = (JSONObject) content.get(k);
-							if (obj.get(pkey).toString().equals(sortedList.get(i))) {
-								flag2 = true;
-								break;
+
+							if (checkDataType == 1) {
+								if (obj.get(pkey).toString().equals(sortedListInt.get(i).toString())) {
+									flag2 = true;
+									break;
+								}
+							} else if (checkDataType == 2) {
+								if (obj.get(pkey).toString().equals(sortedListFlo.get(i).toString())) {
+									flag2 = true;
+									break;
+								}
+							} else {
+								if (obj.get(pkey).toString().equals(sortedListStr.get(i).toString())) {
+									flag2 = true;
+									break;
+								}
 							}
 						}
 						if (flag2) {
