@@ -56,19 +56,8 @@ public class entryClass {
 
 		br.close();
 
-		// createTable();
-		// createTable();
-		// deleteTable();
-		// listTables();
-		// inserttoTable();
-		// deletefromTable();
-		// updatefromTable();
-		// listfromTable();
-		// searchFromTable();
 		menu();
-		//writetoTableList();
-		//writetoKeyMeta();
-
+		
 		/// load all changes to file again
 		FileWriter writer = new FileWriter("tableList.txt");
 		writer.write("");
@@ -177,7 +166,7 @@ public class entryClass {
 
 			}
 			if(!option.equals("10")){
-			System.out.println("\n\nPress ENTER to Continue");
+			System.out.println("\nPress ENTER to Continue");
 			System.in.read();}
 
 		} while (!option.equals("10"));
@@ -268,7 +257,6 @@ public class entryClass {
 				}
 			}
 		}
-		// sc.close();
 	}
 
 	private static void searchFromTable() {
@@ -509,11 +497,12 @@ public class entryClass {
 				list.add(s[0]);
 			}
 			br.close();
+			System.out.println("\nTable columns:");
 			for (int i = 0; i < list.size(); i++) {
 				System.out.print(list.get(i) + "\t");
 			}
 			//
-			System.out.println("\nEnter column names to be displayed separated by spaces:");
+			System.out.println("\n\nEnter column names to be displayed separated by spaces (all to display all columns):");
 			displaylist=sc.nextLine();
 			String s[] = displaylist.split(" ");
 			
@@ -576,7 +565,7 @@ public class entryClass {
 		boolean flag = false, loop = false;
 
 		if (!tablename.contains(tname)) {
-			System.out.println("Table doesn't Exist");
+			System.out.println("Table doesn't exist!");
 		} else {
 			System.out.println("Enter Primary key Value: ");
 			String prim = sc.next();
@@ -686,7 +675,7 @@ public class entryClass {
 		boolean flag = false;
 
 		if (!tablename.contains(tname)) {
-			System.out.println("Table doesn't Exist");
+			System.out.println("Table doesn't exist!");
 		} else {
 			System.out.println("Enter Primary key Value: ");
 			String prim = sc.next();
@@ -700,12 +689,12 @@ public class entryClass {
 			}
 			br.close();
 
+			if(flag == true){
 			JSONArray list = new JSONArray();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null && flag == true) {
+			if (content != null) {
 				for (int i = 0; i < len; i++) {
-
 					obj = (JSONObject) content.get(i);
 					if (!obj.get(pkey).toString().equals(prim)) {
 						list.add(obj);
@@ -716,7 +705,10 @@ public class entryClass {
 			file.write("");
 			file.write(list.toJSONString());
 			file.close();
-
+			System.out.println("\n1 record deleted.");
+			}else{
+				System.out.println("\nPrimary key not found. Returning to main menu.");
+			}
 		}
 
 	}
@@ -816,19 +808,21 @@ public class entryClass {
 			br.close();
 			
 			if (content.size()!=0 && list.contains(newObj.get(pkey).toString())) {
-				System.out.println("Primary key already exist. Record cannot be added.");
+				System.out.println("Primary key already exists. Record cannot be added.");
 			} else {
 				content.add(newObj);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+				System.out.println("\nRecord added successfully.");
 			}
-			FileWriter file = new FileWriter(tname + ".json");
-			file.write("");
-			file.write(content.toJSONString());
-			file.close();
 		}
 
 	}
 
 	private static void listTables() {
+		System.out.println("\nTables in the database:\n");
 		for (String str : tablename) {
 			System.out.println(str);
 		}
@@ -840,7 +834,7 @@ public class entryClass {
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
 		if (!tablename.contains(tname))
-			System.out.println("Table does not exist");
+			System.out.println("Table does not exist!");
 		else {
 			tablename.remove(tname);
 			File file = new File(tname + "_meta.txt");
@@ -860,7 +854,7 @@ public class entryClass {
 
 		Scanner sc = new Scanner(System.in);
 		String dt;
-		System.out.println("Enter the Table Name");
+		System.out.println("Enter the table name:");
 		String tname = sc.next();
 		ArrayList<String> types = new ArrayList<String>();
 		types.add("1");
@@ -871,14 +865,14 @@ public class entryClass {
 		ArrayList<String> colNames = new ArrayList<String>();
 		int slen=0;
 		if (tablename.contains(tname))
-			System.out.println("Table already Exist");
+			System.out.println("Table already exists!");
 
 		else {
 			BufferedWriter br = new BufferedWriter(new FileWriter(tname + "_meta.txt"));
-			System.out.println("Enter number of columns in the Table");
-			int count = sc.nextInt();//todo
+			System.out.println("Enter the number of columns in the table:");
+			int count = sc.nextInt();
 			sc.reset();
-			System.out.println("Available Datatypes Integer(1) Float(2) String(3) Date(4) Boolean(5)");
+			System.out.println("Available data types: Integer(1) Float(2) String(3) Date(4) Boolean(5)");
 			for (int i = 0; i < count; i++) {
 				String line;
 				sc.nextLine();
