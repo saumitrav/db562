@@ -7,8 +7,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.Map;
@@ -633,7 +636,27 @@ public class entryClass {
 											sc.nextLine();
 										}
 									}
-								} else {
+								}
+								else if (Integer.parseInt(s[1]) == 4) {
+									DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+									loop = true;
+									Date date = null;
+									while (loop) {
+										try {
+											value = sc.next();
+											sc.nextLine();
+											date = format.parse(value.toString());
+											loop = false;
+										} catch (InputMismatchException e) {
+											System.out.println("Invalid value!");
+											sc.nextLine();
+										} catch (java.text.ParseException e) {
+											System.out.println("Invalid value!");
+											sc.nextLine();
+										}
+									}
+								} 
+								else {
 									value = sc.nextLine();
 								}
 								//
@@ -797,7 +820,27 @@ public class entryClass {
 							sc.nextLine();
 						}
 					}
-				} else {
+				} 
+				else if (Integer.parseInt(s[1]) == 4) {
+					DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+					loop = true;
+					Date date = null;
+					while (loop) {
+						try {
+							value = sc.next();
+							sc.nextLine();
+							date = format.parse(value.toString());
+							loop = false;
+						} catch (InputMismatchException e) {
+							System.out.println("Invalid value!");
+							sc.nextLine();
+						} catch (java.text.ParseException e) {
+							System.out.println("Invalid value!");
+							sc.nextLine();
+						}
+					}
+				} 
+				else {
 					value = sc.nextLine();
 				}
 				// type check ends
