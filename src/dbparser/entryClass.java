@@ -516,7 +516,7 @@ public class entryClass {
 				System.out.print(list.get(i) + "\t");
 			}
 			//
-			System.out.println("\nenter column names to be displayed");
+			System.out.println("\nEnter column names to be displayed separated by spaces:");
 			displaylist=sc.nextLine();
 			String s[] = displaylist.split(" ");
 			
@@ -680,13 +680,16 @@ public class entryClass {
 
 						}
 						brmeta.close();
-					}
-					list.add(obj);
-					FileWriter file = new FileWriter(tname + ".json");
-					file.write("");
-					file.write(list.toJSONString());
-					file.close();
+						list.add(obj);
+						FileWriter file = new FileWriter(tname + ".json");
+						file.write("");
+						file.write(list.toJSONString());
+						file.close();
 
+					}else{
+						System.out.println("Primary key value not present in the table!");
+					}
+					
 				}
 
 			}
