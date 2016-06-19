@@ -59,19 +59,8 @@ public class entryClass {
 
 		br.close();
 
-		// createTable();
-		// createTable();
-		// deleteTable();
-		// listTables();
-		// inserttoTable();
-		// deletefromTable();
-		// updatefromTable();
-		// listfromTable();
-		// searchFromTable();
 		menu();
-		//writetoTableList();
-		//writetoKeyMeta();
-
+		
 		/// load all changes to file again
 		FileWriter writer = new FileWriter("tableList.txt");
 		writer.write("");
@@ -130,6 +119,21 @@ public class entryClass {
 		
 	}
 
+	private static void printColNames(ArrayList<String> list) {
+		System.out.println();
+		for (int i = 0; i < list.size(); i++) {
+			System.out.print(list.get(i) + "\t\t\t\t");
+		}
+		System.out.println();
+	}
+
+	private static void printObj(ArrayList<String> list, JSONObject obj) {
+		for (int j = 0; j < list.size(); j++) {
+			System.out.print(obj.get(list.get(j)) + "\t\t\t\t");
+		}
+		System.out.println();
+	}
+
 	private static void menu() throws IOException, ParseException {
 
 		String option;
@@ -180,7 +184,7 @@ public class entryClass {
 
 			}
 			if(!option.equals("10")){
-			System.out.println("\n\nPress ENTER to Continue");
+			System.out.println("\nPress ENTER to Continue");
 			System.in.read();}
 
 		} while (!option.equals("10"));
@@ -246,10 +250,12 @@ public class entryClass {
 						}
 					}
 
-					for (int i = 0; i < list.size(); i++) {
-						System.out.print(list.get(i) + "\t\t\t\t\t");
-					}
-					System.out.println();
+//					for (int i = 0; i < list.size(); i++) {
+//						System.out.print(list.get(i) + "\t\t\t\t\t");
+//					}
+//					System.out.println();
+					printColNames(list);
+					
 
 					for (int i = 0; i < len; i++) {
 						for (int k = 0; k < len; k++) {
@@ -260,10 +266,11 @@ public class entryClass {
 							}
 						}
 						if (flag2) {
-							for (int j = 0; j < list.size(); j++) {
-								System.out.print(obj.get(list.get(j)) + "\t\t\t");
-							}
-							System.out.println();
+//							for (int j = 0; j < list.size(); j++) {
+//								System.out.print(obj.get(list.get(j)) + "\t\t\t");
+//							}
+//							System.out.println();
+							printObj(list, obj);
 						} else {
 							System.out.print("\t\t\tSomething wrong with the database!!");
 						}
@@ -271,7 +278,6 @@ public class entryClass {
 				}
 			}
 		}
-		// sc.close();
 	}
 
 	private static void searchFromTable() {
@@ -299,6 +305,7 @@ public class entryClass {
 	    boolean flag = false;
 	    boolean operatorFlag = false;
 	    int checkDataType = 0;
+	    ArrayList<String> list = new ArrayList<>();
 
 	    if (operator.equals("=") || operator.equals("<") || operator.equals(">") || operator.equals("<=") || operator.equals(">=")){
 	        operatorFlag = true;
@@ -311,11 +318,11 @@ public class entryClass {
 	        System.out.println("Table does not exist!");
 	    } else {
 	        try {
-
 	            BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
 	            boolean columnNameFlag = false;
 	            while ((line = bufferedReader.readLine()) != null) {
 	                String s[] = line.split(" ");
+	                list.add(s[0]);
 	                if (s[0].equals(columnName)) {
 	                    columnNameFlag = true;
 	                    int temp = Integer.parseInt(s[1]);
@@ -345,13 +352,12 @@ public class entryClass {
 	                    if (flag == false) {
 
 	                        // handling for string data types
-
+	                    	printColNames(list);
 	                        for (int i = 0; i < len; i++) {
-
 	                            obj = (JSONObject) content.get(i);
 	                            if (obj.get(columnName).equals(valueToSearch)) {
-	                                System.out.println(obj.toJSONString());
-
+//	                                System.out.println(obj.toJSONString());
+	                            	printObj(list, obj);
 	                            }
 	                        }
 	                    } else {
@@ -359,54 +365,53 @@ public class entryClass {
 	                        if (checkDataType == 1){
 	                            try {
 	                                if (operator.equals("<")) {
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Integer.parseInt(obj.get(columnName).toString()) < Integer
 	                                                .parseInt(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
 	                                    }
 	                                } else if (operator.equals(">")) {
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Integer.parseInt(obj.get(columnName).toString()) > Integer
 	                                                .parseInt(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                            printObj(list, obj);
 	                                        }
 	                                    }
 	                                } else if (operator.equals("=")) {
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Integer.parseInt(obj.get(columnName).toString()) == Integer
 	                                                .parseInt(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
-
 	                                    }
 	                                } else if (operator.equals("<=")){
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Integer.parseInt(obj.get(columnName).toString()) <= Integer
 	                                                .parseInt(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
 	                                    }
 	                                } else if (operator.equals(">=")){
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Integer.parseInt(obj.get(columnName).toString()) >= Integer
 	                                                .parseInt(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
 	                                    }
 	                                }
@@ -417,53 +422,54 @@ public class entryClass {
 	                        } else if (checkDataType ==2) {
 	                            try {
 	                                if (operator.equals("<")) {
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Float.parseFloat(obj.get(columnName).toString()) < Float
 	                                                .parseFloat(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
 	                                    }
 	                                } else if (operator.equals(">")) {
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Float.parseFloat(obj.get(columnName).toString()) > Float
 	                                                .parseFloat(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
 	                                    }
 	                                } else if (operator.equals("=")) {
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Float.parseFloat(obj.get(columnName).toString()) == Float
 	                                                .parseFloat(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
 
 	                                    }
 	                                } else if (operator.equals("<=")){
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Float.parseFloat(obj.get(columnName).toString()) <= Float
 	                                                .parseFloat(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
-
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
 	                                    }
 	                                } else if (operator.equals(">=")){
-	                                    for (int i = 0; i < len; i++) {
-
+	                                	printColNames(list);
+	        	                        for (int i = 0; i < len; i++) {
 	                                        obj = (JSONObject) content.get(i);
 	                                        if (Float.parseFloat(obj.get(columnName).toString()) >= Float
 	                                                .parseFloat(valueToSearch)) {
-	                                            System.out.println(obj.toJSONString());
+//	                                            System.out.println(obj.toJSONString());
+	                                        	printObj(list, obj);
 	                                        }
 	                                    }
 	                                }
@@ -512,11 +518,12 @@ public class entryClass {
 				list.add(s[0]);
 			}
 			br.close();
+			System.out.println("\nTable columns:");
 			for (int i = 0; i < list.size(); i++) {
 				System.out.print(list.get(i) + "\t");
 			}
 			//
-			System.out.println("\nEnter column names to be displayed separated by spaces:");
+			System.out.println("\n\nEnter column names to be displayed separated by spaces (all to display all columns):");
 			displaylist=sc.nextLine();
 			String s[] = displaylist.split(" ");
 			
@@ -579,7 +586,7 @@ public class entryClass {
 		boolean flag = false, loop = false;
 
 		if (!tablename.contains(tname)) {
-			System.out.println("Table doesn't Exist");
+			System.out.println("Table doesn't exist!");
 		} else {
 			System.out.println("Enter Primary key Value: ");
 			String prim = sc.next();
@@ -709,7 +716,7 @@ public class entryClass {
 		boolean flag = false;
 
 		if (!tablename.contains(tname)) {
-			System.out.println("Table doesn't Exist");
+			System.out.println("Table doesn't exist!");
 		} else {
 			System.out.println("Enter Primary key Value: ");
 			String prim = sc.next();
@@ -723,12 +730,12 @@ public class entryClass {
 			}
 			br.close();
 
+			if(flag == true){
 			JSONArray list = new JSONArray();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null && flag == true) {
+			if (content != null) {
 				for (int i = 0; i < len; i++) {
-
 					obj = (JSONObject) content.get(i);
 					if (!obj.get(pkey).toString().equals(prim)) {
 						list.add(obj);
@@ -739,7 +746,10 @@ public class entryClass {
 			file.write("");
 			file.write(list.toJSONString());
 			file.close();
-
+			System.out.println("\n1 record deleted.");
+			}else{
+				System.out.println("\nPrimary key not found. Returning to main menu.");
+			}
 		}
 
 	}
@@ -760,10 +770,12 @@ public class entryClass {
 		boolean loop = true;
 		ArrayList<String> list = new ArrayList<>();
 		boolean flag = false;
+		String choice;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't Exist");
 		} else {
+			do{
 			BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
 			while ((keyline = filekey.readLine()) != null) {
 				String s[] = keyline.split(" ");
@@ -859,19 +871,25 @@ public class entryClass {
 			br.close();
 			
 			if (content.size()!=0 && list.contains(newObj.get(pkey).toString())) {
-				System.out.println("Primary key already exist. Record cannot be added.");
+				System.out.println("Primary key already exists. Record cannot be added.");
 			} else {
 				content.add(newObj);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+				System.out.println("\nRecord added successfully.");
 			}
-			FileWriter file = new FileWriter(tname + ".json");
-			file.write("");
-			file.write(content.toJSONString());
-			file.close();
+			System.out.println("Do you want to add another record? (y/n): ");
+			choice=sc.next();
+			sc.nextLine();
+			}while(choice.toLowerCase().equals("y"));
 		}
 
 	}
 
 	private static void listTables() {
+		System.out.println("\nTables in the database:\n");
 		for (String str : tablename) {
 			System.out.println(str);
 		}
@@ -883,7 +901,7 @@ public class entryClass {
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
 		if (!tablename.contains(tname))
-			System.out.println("Table does not exist");
+			System.out.println("Table does not exist!");
 		else {
 			tablename.remove(tname);
 			File file = new File(tname + "_meta.txt");
@@ -903,7 +921,7 @@ public class entryClass {
 
 		Scanner sc = new Scanner(System.in);
 		String dt;
-		System.out.println("Enter the Table Name");
+		System.out.println("Enter the table name:");
 		String tname = sc.next();
 		ArrayList<String> types = new ArrayList<String>();
 		types.add("1");
@@ -914,14 +932,14 @@ public class entryClass {
 		ArrayList<String> colNames = new ArrayList<String>();
 		int slen=0;
 		if (tablename.contains(tname))
-			System.out.println("Table already Exist");
+			System.out.println("Table already exists!");
 
 		else {
 			BufferedWriter br = new BufferedWriter(new FileWriter(tname + "_meta.txt"));
-			System.out.println("Enter number of columns in the Table");
-			int count = sc.nextInt();//todo
+			System.out.println("Enter the number of columns in the table:");
+			int count = sc.nextInt();
 			sc.reset();
-			System.out.println("Available Datatypes Integer(1) Float(2) String(3) Date(4) Boolean(5)");
+			System.out.println("Available data types: Integer(1) Float(2) String(3) Date(4) Boolean(5)");
 			for (int i = 0; i < count; i++) {
 				String line;
 				sc.nextLine();
