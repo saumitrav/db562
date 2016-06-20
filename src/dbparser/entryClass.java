@@ -699,8 +699,8 @@ public class entryClass {
 									while (loop) {
 										try {
 											value = sc.next();
-											sc.nextLine();
 											date = format.parse(value.toString());
+											sc.nextLine();
 											loop = false;
 										} catch (InputMismatchException e) {
 											System.out.println("Invalid value!");
@@ -724,15 +724,13 @@ public class entryClass {
 
 						}
 						brmeta.close();
-						list.add(obj);
-						FileWriter file = new FileWriter(tname + ".json");
-						file.write("");
-						file.write(list.toJSONString());
-						file.close();
+						
 
-					}else{
-						System.out.println("Primary key value not present in the table!");
-					}
+					}list.add(obj);
+					FileWriter file = new FileWriter(tname + ".json");
+					file.write("");
+					file.write(list.toJSONString());
+					file.close();
 					
 				}
 
@@ -885,8 +883,8 @@ public class entryClass {
 					while (loop) {
 						try {
 							value = sc.next();
-							sc.nextLine();
 							date = format.parse(value.toString());
+							sc.nextLine();
 							loop = false;
 						} catch (InputMismatchException |java.text.ParseException e) {
 							System.out.println("Invalid value!");
@@ -948,6 +946,7 @@ public class entryClass {
 			
 			writetoTableList();
 			writetoKeyMeta();
+			System.out.println("\nTable deleted Successfully ");
 		}
 
 	}
