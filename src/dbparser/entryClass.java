@@ -3,10 +3,14 @@ package dbparser;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -143,7 +147,7 @@ public class entryClass {
 			System.out.println("1)Create New Table\n2)Delete Existing Table\n3)List all tables in Database");
 			System.out.println(
 					"4)Insert Record into a Table\n5)Delete Record from a Table\n6)Update Record from a Table\n7)List content of a Table");
-			System.out.println("8)Search Record for an Attribute\n9)Sort Table\n10)Exit");
+			System.out.println("8)Search Record for an Attribute\n9)Sort Table\n10)Print B+ tree\n11)Enter SQL command\n12)Exit");
 			System.out.print("\nEnter your choice : ");
 			Scanner scan = new Scanner(System.in);
 			option = scan.next();
@@ -178,16 +182,26 @@ public class entryClass {
 				break;
 			case "10":
 				break;
+			case "11": 
+				String inSQL;
+				System.out.print("\nEnter the SQL statement : ");
+				scan.nextLine();
+				inSQL = scan.nextLine();
+				parser parse = new parser();
+				parse.parseSQL(inSQL);
+				break;
+			case "12":
+				break;
 			default:
 				System.out.println("Invalid Entry");
 				break;
 
 			}
-			if(!option.equals("10")){
+			if(!option.equals("12")){
 			System.out.println("\nPress ENTER to Continue");
 			System.in.read();}
 
-		} while (!option.equals("10"));
+		} while (!option.equals("12"));
 	}
 
 	private static void sortTable() throws IOException, ParseException {
@@ -317,6 +331,90 @@ public class entryClass {
 		}
 	}
 
+	void sortTableSQL(String tname, String orderBy, boolean ascending) throws IOException, ParseException {
+		if (!tablename.contains(tname)) {
+			System.out.println("Table doesn't Exist");
+		} else {
+			String name;
+			JSONParser parser = new JSONParser();
+			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+
+			ArrayList<String> list = new ArrayList<>();
+			ArrayList<String> sortedListStr = new ArrayList<>();
+			ArrayList<Integer> sortedListInt = new ArrayList<>();
+			ArrayList<Float> sortedListFlo = new ArrayList<>();
+			JSONObject obj = new JSONObject();
+			BufferedReader br2 = new BufferedReader(new FileReader(tname + "_meta.txt"));
+			int checkDataType = 0;
+
+			// check data type of order by attribute
+			while ((name = br2.readLine()) != null) {
+				String s[] = name.split(" ");
+				list.add(s[0]);
+				if (s[0].equals(orderBy)) {
+					checkDataType = Integer.parseInt(s[1]);
+				}
+			}
+			br2.close();
+
+			int len = content.size();
+			if (content != null) {
+				for (int i = 0; i < len; i++) {
+					obj = (JSONObject) content.get(i);
+					if (checkDataType == 1) {
+						sortedListInt.add(Integer.parseInt(obj.get(orderBy).toString()));
+					} else if (checkDataType == 2) {
+						sortedListFlo.add(Float.parseFloat(obj.get(orderBy).toString()));
+					} else {
+						sortedListStr.add(obj.get(orderBy).toString());
+					}
+				}
+
+				if (ascending) {
+					if (checkDataType == 1) {
+						Collections.sort(sortedListInt);
+					} else if (checkDataType == 2) {
+						Collections.sort(sortedListFlo);
+					} else {
+						Collections.sort(sortedListStr);
+					}
+				} else {
+					if (checkDataType == 1) {
+						Collections.sort(sortedListInt, Collections.reverseOrder());
+					} else if (checkDataType == 2) {
+						Collections.sort(sortedListFlo, Collections.reverseOrder());
+					} else {
+						Collections.sort(sortedListStr, Collections.reverseOrder());
+					}
+				}
+
+				printColNames(list);
+
+				for (int i = 0; i < len; i++) {
+					for (int k = 0; k < len; k++) {
+						obj = (JSONObject) content.get(k);
+
+						if (checkDataType == 1) {
+							if (obj.get(orderBy).toString().equals(sortedListInt.get(i).toString())) {
+								break;
+							}
+						} else if (checkDataType == 2) {
+							if (obj.get(orderBy).toString().equals(sortedListFlo.get(i).toString())) {
+								break;
+							}
+						} else {
+							if (obj.get(orderBy).toString().equals(sortedListStr.get(i).toString())) {
+								break;
+							}
+						}
+					}
+					printObj(list, obj);
+				}
+			}
+		}
+	}
+
+	
 	private static void sortTablelist(String tname, JSONArray content, ArrayList<String> colname) throws IOException, ParseException {
 //		System.out.println("Enter Table Name: ");
 		Scanner sc = new Scanner(System.in);
@@ -439,6 +537,169 @@ public class entryClass {
 							System.out.print("\t\t\tSomething wrong with the database!!");
 						}
 					}
+				}
+			}
+		}
+	}
+	
+	public void searchForSQL(String tableName, ArrayList<String> whereConds) {
+		
+		for (String cond : whereConds) {
+			String delims = "((?<=>|<|=)|(?=>|<|=))";
+			String[] currCond = cond.split(delims);
+			String columnName = currCond[0].trim();
+			String operator = currCond[1].trim();
+			String valueToSearch = currCond[2].trim();
+			
+			JSONArray content = null;
+			JSONArray content2 = new JSONArray();
+			JSONParser parser = new JSONParser();
+			JSONObject obj;
+			String line = "";
+			boolean flag = false;
+			boolean operatorFlag = false;
+			int checkDataType = 0;
+			ArrayList<String> list = new ArrayList<>();
+
+			if (operator.equals("=") || operator.equals("<") || operator.equals(">")) {
+				operatorFlag = true;
+			} else {
+				System.out.println("Where operator invalid!");
+			}
+
+			if (!tablename.contains(tableName)) {
+				System.out.println("Table does not exist!");
+			} else {
+				try {
+					BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
+					boolean columnNameFlag = false;
+					while ((line = bufferedReader.readLine()) != null) {
+						String s[] = line.split(" ");
+						list.add(s[0]);
+						if (s[0].equals(columnName)) {
+							columnNameFlag = true;
+							int temp = Integer.parseInt(s[1]);
+							if (temp == 1) {
+								flag = true;
+								checkDataType = 1;
+							} else if (temp == 2) {
+								flag = true;
+								checkDataType = 2;
+							}
+						}
+					}
+					bufferedReader.close();
+
+					if (columnNameFlag == false) {
+						System.out.println(
+								"The column name: " + columnName + " does not exist in given table: " + tableName);
+					} else {
+						try {
+							content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+						} catch (ParseException e) {
+							System.out.println("ParseException in search method");
+							e.printStackTrace();
+						}
+						int len = content.size();
+						if (content != null && operatorFlag == true) {
+							if (flag == false) {
+
+								// handling for string data types
+								printColNames(list);
+								for (int i = 0; i < len; i++) {
+									obj = (JSONObject) content.get(i);
+									if (obj.get(columnName).equals(valueToSearch)) {
+										content2.add(obj);
+									}
+								}
+							} else {
+								// handling for Integer
+								if (checkDataType == 1) {
+									try {
+										if (operator.equals("<")) {
+											printColNames(list);
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) < Integer
+														.parseInt(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										} else if (operator.equals(">")) {
+											printColNames(list);
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) > Integer
+														.parseInt(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										} else if (operator.equals("=")) {
+											printColNames(list);
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) == Integer
+														.parseInt(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										}
+									} catch (Exception e) {
+										// System.out.println("The value: " + valueToSearch + " does not exist in this table");
+									}
+
+								} else if (checkDataType == 2) {
+									try {
+										if (operator.equals("<")) {
+											printColNames(list);
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) < Float
+														.parseFloat(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										} else if (operator.equals(">")) {
+											printColNames(list);
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) > Float
+														.parseFloat(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										} else if (operator.equals("=")) {
+											printColNames(list);
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) == Float
+														.parseFloat(valueToSearch)) {
+													content2.add(obj);
+												}
+
+											}
+										}
+									} catch (Exception e) {
+										// System.out.println("The value: " + valueToSearch + " does not exist in this table");
+									}
+								}
+							}
+							FileWriter file = new FileWriter(tableName + ".json");
+							file.write(content2.toJSONString());
+							file.close();
+						} else {
+							System.out.println(
+									"Unable to perform search. Please enter table name, column name and operator values correctly");
+						}
+					}
+
+				} catch (FileNotFoundException e) {
+					System.out.println("Unable to read file tablekeymeta.txt in search method");
+					e.printStackTrace();
+				} catch (IOException io) {
+					System.out.println("IOException in search method");
+					io.printStackTrace();
+
 				}
 			}
 		}
@@ -668,12 +929,71 @@ public class entryClass {
 	            io.printStackTrace();
 
 	        } catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 	    }
 
 	}
+	
+	void projectionForSQL(String tname, ArrayList<String> colname) throws IOException, ParseException{
+		String name;
+		ArrayList<String> list = new ArrayList<>();
+		ArrayList<String> value = new ArrayList<>();
+		JSONParser parser = new JSONParser();
+		JSONObject obj = new JSONObject();
+		boolean listflag = false;
+		
+		if(!tablename.contains(tname)){
+			System.out.println("Table doesn't Exist");
+		}else{
+			if (!colname.get(0).equals("*")) {
+				BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				while ((name = br.readLine()) != null) {
+					String s[] = name.split(" ");
+					list.add(s[0].trim());
+					value.add(s[1]);
+				}
+				br.close();
+				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+				JSONArray content2 = new JSONArray();
+
+				int len = content.size();
+				if (content != null) {
+					for (int i = 0; i < len; i++) {
+						JSONObject newObj = new JSONObject();
+						
+						obj = (JSONObject) content.get(i);
+
+						for(String str:colname){
+							newObj.put(str,obj.get(str));
+						}
+						
+//						for (int j = 0; j < list.size(); j++) {
+//							if (colname.contains(list.get(j))) {
+//								newObj.put(list.get(j), obj.get(list.get(j)));
+//							}
+//						}
+						content2.add(newObj);
+					}
+				}
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content2.toJSONString());
+				file.close();
+
+				BufferedWriter br2 = new BufferedWriter(new FileWriter(tname + "_meta.txt"));
+				for (int i = 0; i < list.size(); i++) {
+					if (colname.contains(list.get(i))) {
+						br2.write(list.get(i).toString() + " " + value.get(i).toString());
+						br2.newLine();
+					}
+				}
+				br2.close();
+			}
+
+		}
+	}
+
 	private static void listfromTable() throws IOException, ParseException {
 		System.out.println("Enter Table Name: ");
 		Scanner sc = new Scanner(System.in);
@@ -873,7 +1193,8 @@ public class entryClass {
 						brmeta.close();
 						
 
-					}list.add(obj);
+					}
+					list.add(obj);
 					FileWriter file = new FileWriter(tname + ".json");
 					file.write("");
 					file.write(list.toJSONString());
@@ -957,112 +1278,108 @@ public class entryClass {
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't Exist");
 		} else {
-			do{
-			BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
-			while ((keyline = filekey.readLine()) != null) {
-				String s[] = keyline.split(" ");
-				if (s[0].equals(tname)) {
-					pkey = s[1];
-					flag = true;
+			do {
+				BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
+				while ((keyline = filekey.readLine()) != null) {
+					String s[] = keyline.split(" ");
+					if (s[0].equals(tname)) {
+						pkey = s[1];
+						flag = true;
+					}
 				}
-			}
-			filekey.close();
+				filekey.close();
 
-			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
-			int len = content.size();
-			if (content != null && flag == true) {
-				for (int i = 0; i < len; i++) {
+				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+				int len = content.size();
+				if (content != null && flag == true) {
+					for (int i = 0; i < len; i++) {
 
-					obj = (JSONObject) content.get(i);
-					list.add(obj.get(pkey).toString());
+						obj = (JSONObject) content.get(i);
+						list.add(obj.get(pkey).toString());
 
+					}
 				}
-			}
-			
-			BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
-			while ((name = br.readLine()) != null) {
-				String s[] = name.split(" ");
-				System.out.println("Enter value for " + s[0]);
-				// type check start
-				if (Integer.parseInt(s[1]) == 1) {
-					loop = true;
-					while (loop) {
-						try {
-							value = sc.nextInt();
-							sc.nextLine();
-							loop = false;
-						} catch (InputMismatchException e) {
-							System.out.println("Invalid value!");
-							sc.nextLine();
+
+				BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				while ((name = br.readLine()) != null) {
+					String s[] = name.split(" ");
+					System.out.println("Enter value for " + s[0]);
+					// type check start
+					if (Integer.parseInt(s[1]) == 1) {
+						loop = true;
+						while (loop) {
+							try {
+								value = sc.nextInt();
+								sc.nextLine();
+								loop = false;
+							} catch (InputMismatchException e) {
+								System.out.println("Invalid value!");
+								sc.nextLine();
+							}
 						}
-					}
-				}
-				else if (Integer.parseInt(s[1]) == 2) {
-					loop = true;
-					while (loop) {
-						try {
-							value = sc.nextFloat();
-							sc.nextLine();
-							loop = false;
-						} catch (InputMismatchException e) {
-							System.out.println("Invalid value!");
-							sc.nextLine();
+					} else if (Integer.parseInt(s[1]) == 2) {
+						loop = true;
+						while (loop) {
+							try {
+								value = sc.nextFloat();
+								sc.nextLine();
+								loop = false;
+							} catch (InputMismatchException e) {
+								System.out.println("Invalid value!");
+								sc.nextLine();
+							}
 						}
-					}
-				}
-				else if (Integer.parseInt(s[1]) == 5) {
-					loop = true;
-					while (loop) {
-						try {
-							value = sc.nextBoolean();
-							sc.nextLine();
-							loop = false;
-						} catch (InputMismatchException e) {
-							System.out.println("Invalid value!");
-							sc.nextLine();
+					} else if (Integer.parseInt(s[1]) == 5) {
+						loop = true;
+						while (loop) {
+							try {
+								value = sc.nextBoolean();
+								sc.nextLine();
+								loop = false;
+							} catch (InputMismatchException e) {
+								System.out.println("Invalid value!");
+								sc.nextLine();
+							}
 						}
+					} else if (Integer.parseInt(s[1]) == 4) {
+						DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+						loop = true;
+						Date date = null;
+						while (loop) {
+							try {
+								value = sc.next();
+								date = format.parse(value.toString());
+								sc.nextLine();
+								loop = false;
+							} catch (InputMismatchException | java.text.ParseException e) {
+								System.out.println("Invalid value!");
+								sc.nextLine();
+							}
+						}
+					} else {
+						value = sc.nextLine();
 					}
-				} 
-				else if (Integer.parseInt(s[1]) == 4) {
-					DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
-					loop = true;
-					Date date = null;
-					while (loop) {
-						try {
-							value = sc.next();
-							date = format.parse(value.toString());
-							sc.nextLine();
-							loop = false;
-						} catch (InputMismatchException |java.text.ParseException e) {
-							System.out.println("Invalid value!");
-							sc.nextLine();
-						} 
-					}
-				} 
-				else {
-					value = sc.nextLine();
+					// type check ends
+
+					newObj.put(s[0], value);
+
 				}
-				// type check ends
+				br.close();
 
-				newObj.put(s[0], value);
-
-			}
-			br.close();
-			
-			if (content.size()!=0 && list.contains(newObj.get(pkey).toString())) {
-				System.out.println("Primary key already exists. Record cannot be added.");
-			} else {
-				content.add(newObj);
-				FileWriter file = new FileWriter(tname + ".json");
-				file.write("");
-				file.write(content.toJSONString());
-				file.close();
-				System.out.println("\nRecord added successfully.");
-			}
-			System.out.println("Do you want to add another record? (y/n): ");
-			choice=sc.next();
-			sc.nextLine();
-			}while(choice.toLowerCase().equals("y"));
+				if (content.size() != 0 && list.contains(newObj.get(pkey).toString())) {
+					System.out.println("Primary key already exists. Record cannot be added.");
+				} else {
+					content.add(newObj);
+					FileWriter file = new FileWriter(tname + ".json");
+					file.write("");
+					file.write(content.toJSONString());
+					file.close();
+					System.out.println("\nRecord added successfully.");
+				}
+				System.out.println("Do you want to add another record? (y/n): ");
+				choice = sc.next();
+				sc.nextLine();
+			} while (choice.toLowerCase().equals("y"));
 		}
 
 	}
@@ -1072,7 +1389,6 @@ public class entryClass {
 		for (String str : tablename) {
 			System.out.println(str);
 		}
-
 	}
 
 	private static void deleteTable() throws IOException {
@@ -1096,6 +1412,76 @@ public class entryClass {
 			System.out.println("\nTable deleted Successfully ");
 		}
 
+	}
+	
+	void createTempTable(String tname, String temptname) throws IOException {
+		String keyline;
+		String pkey = "";
+
+		BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
+		while ((keyline = filekey.readLine()) != null) {
+			String s[] = keyline.split(" ");
+			if (s[0].equals(tname)) {
+				pkey = s[1];
+			}
+		}
+		filekey.close();
+		
+		//delete temp table if already present
+		if (tablename.contains(temptname)) {
+			tablename.remove(temptname);
+			tablekey.remove(temptname);
+			File file = new File(temptname + "_meta.txt");
+			if (file.exists()) {
+				file.delete();
+			}
+			file = new File(temptname + ".json");
+			if (file.exists()) {
+				file.delete();
+			}
+			writetoTableList();
+			writetoKeyMeta();
+		}
+
+		// copy meta file
+		File input = new File(tname + "_meta.txt");
+		File output = new File(temptname + "_meta.txt");
+		if (!output.exists()) {
+			output.createNewFile();
+		}
+		copyFileUsingFileStreams(input, output);
+
+		// copy json file
+		input = new File(tname + ".json");
+		output = new File(temptname + ".json");
+		if (!output.exists()) {
+			output.createNewFile();
+		}
+		copyFileUsingFileStreams(input, output);
+
+		tablekey.put(temptname, pkey);
+		tablename.add(temptname);
+
+		writetoTableList();
+		writetoKeyMeta();
+	}
+	
+	private static void copyFileUsingFileStreams(File source, File dest)
+			throws IOException {
+		InputStream input = null;
+		OutputStream output = null;
+		try {
+			input = new FileInputStream(source);
+			output = new FileOutputStream(dest);
+			byte[] buf = new byte[1024];
+			int bytesRead;
+			while ((bytesRead = input.read(buf)) > 0) {
+				output.write(buf, 0, bytesRead);
+			}
+		} finally {
+			input.close();
+			output.close();
+		}
 	}
 
 	private static void createTable() throws IOException {
