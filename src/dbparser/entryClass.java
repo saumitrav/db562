@@ -1608,7 +1608,6 @@ public class entryClass {
 	}
 
 	private static void inserttoTable() throws IOException, ParseException {
-
 		System.out.println("Enter Table Name: ");
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
@@ -1624,114 +1623,129 @@ public class entryClass {
 		ArrayList<String> list = new ArrayList<>();
 		boolean flag = false;
 		String choice;
-
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't Exist");
 		} else {
-			do {
-				BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
-				while ((keyline = filekey.readLine()) != null) {
-					String s[] = keyline.split(" ");
-					if (s[0].equals(tname)) {
-						pkey = s[1];
-						flag = true;
+			do{
+			BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
+			while ((keyline = filekey.readLine()) != null) {
+				String s[] = keyline.split(" ");
+				if (s[0].equals(tname)) {
+					pkey = s[1];
+					flag = true;
+				}
+			}
+			filekey.close();
+			//read content for unique key value
+			filekey = new BufferedReader(new FileReader(tname+"_unique.txt"));
+			keyline = filekey.readLine();
+				String sunique[] = keyline.split(" ");
+				Integer uniquekey=Integer.parseInt(sunique[0]); 								
+			filekey.close();
+			
+			//
+			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+			int len = content.size();
+			if (content != null && flag == true) {
+				for (int i = 0; i < len; i++) {
+					obj = (JSONObject) content.get(i);
+					list.add(obj.get(pkey).toString());
+				}
+			}
+			
+			BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+			br.readLine();
+			newObj.put(tname+"_pkey", uniquekey);
+			uniquekey++;
+			while ((name = br.readLine()) != null) {
+				String s[] = name.split(" ");
+				System.out.println("Enter value for " + s[0]);
+				// type check start
+				if (Integer.parseInt(s[1]) == 1) {
+					loop = true;
+					while (loop) {
+						try {
+							value = sc.nextInt();
+							sc.nextLine();
+							loop = false;
+						} catch (InputMismatchException e) {
+							System.out.println("Invalid value!");
+							sc.nextLine();
+						}
 					}
 				}
-				filekey.close();
-
-				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
-				int len = content.size();
-				if (content != null && flag == true) {
-					for (int i = 0; i < len; i++) {
-
-						obj = (JSONObject) content.get(i);
-						list.add(obj.get(pkey).toString());
-
+				else if (Integer.parseInt(s[1]) == 2) {
+					loop = true;
+					while (loop) {
+						try {
+							value = sc.nextFloat();
+							sc.nextLine();
+							loop = false;
+						} catch (InputMismatchException e) {
+							System.out.println("Invalid value!");
+							sc.nextLine();
+						}
 					}
 				}
-
-				BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
-				while ((name = br.readLine()) != null) {
-					String s[] = name.split(" ");
-					System.out.println("Enter value for " + s[0]);
-					// type check start
-					if (Integer.parseInt(s[1]) == 1) {
-						loop = true;
-						while (loop) {
-							try {
-								value = sc.nextInt();
-								sc.nextLine();
-								loop = false;
-							} catch (InputMismatchException e) {
-								System.out.println("Invalid value!");
-								sc.nextLine();
-							}
+				else if (Integer.parseInt(s[1]) == 5) {
+					loop = true;
+					while (loop) {
+						try {
+							value = sc.nextBoolean();
+							sc.nextLine();
+							loop = false;
+						} catch (InputMismatchException e) {
+							System.out.println("Invalid value!");
+							sc.nextLine();
 						}
-					} else if (Integer.parseInt(s[1]) == 2) {
-						loop = true;
-						while (loop) {
-							try {
-								value = sc.nextFloat();
-								sc.nextLine();
-								loop = false;
-							} catch (InputMismatchException e) {
-								System.out.println("Invalid value!");
-								sc.nextLine();
-							}
-						}
-					} else if (Integer.parseInt(s[1]) == 5) {
-						loop = true;
-						while (loop) {
-							try {
-								value = sc.nextBoolean();
-								sc.nextLine();
-								loop = false;
-							} catch (InputMismatchException e) {
-								System.out.println("Invalid value!");
-								sc.nextLine();
-							}
-						}
-					} else if (Integer.parseInt(s[1]) == 4) {
-						DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
-						loop = true;
-						Date date = null;
-						while (loop) {
-							try {
-								value = sc.next();
-								date = format.parse(value.toString());
-								sc.nextLine();
-								loop = false;
-							} catch (InputMismatchException | java.text.ParseException e) {
-								System.out.println("Invalid value!");
-								sc.nextLine();
-							}
-						}
-					} else {
-						value = sc.nextLine();
 					}
-					// type check ends
-
-					newObj.put(s[0], value);
-
+				} 
+				else if (Integer.parseInt(s[1]) == 4) {
+					DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+					loop = true;
+					Date date = null;
+					while (loop) {
+						try {
+							value = sc.next();
+							date = format.parse(value.toString());
+							sc.nextLine();
+							loop = false;
+						} catch (InputMismatchException |java.text.ParseException e) {
+							System.out.println("Invalid value!");
+							sc.nextLine();
+						} 
+					}
+				} 
+				else {
+					value = sc.nextLine();
 				}
-				br.close();
-
-				if (content.size() != 0 && list.contains(newObj.get(pkey).toString())) {
-					System.out.println("Primary key already exists. Record cannot be added.");
-				} else {
-					content.add(newObj);
-					FileWriter file = new FileWriter(tname + ".json");
-					file.write("");
-					file.write(content.toJSONString());
-					file.close();
-					System.out.println("\nRecord added successfully.");
-				}
-				System.out.println("Do you want to add another record? (y/n): ");
-				choice = sc.next();
-				sc.nextLine();
-			} while (choice.toLowerCase().equals("y"));
+				// type check ends
+				newObj.put(s[0], value);
+			}
+			br.close();
+			
+			if (content.size()!=0 && list.contains(newObj.get(pkey).toString())) {
+				System.out.println("Primary key already exists. Record cannot be added.");
+			} else {
+				content.add(newObj);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+				System.out.println("\nRecord added successfully.");
+			}
+			//write file content to unique file
+			FileWriter writerunique = new FileWriter(tname+"_unique.txt");
+			writerunique.write("");
+			writerunique.write(uniquekey.toString());
+			writerunique.close();
+			
+			//
+			System.out.println("Do you want to add another record? (y/n): ");
+			choice=sc.next();
+			sc.nextLine();
+			}while(choice.toLowerCase().equals("y"));
 		}
-
 	}
 
 	private static void listTables() {
@@ -1756,12 +1770,14 @@ public class entryClass {
 			file = new File(tname + ".json");
 			if (file.exists())
 				file.delete();
+			file = new File(tname + "_unique.txt");
+			if (file.exists())
+				file.delete();
 			
 			writetoTableList();
 			writetoKeyMeta();
 			System.out.println("\nTable deleted Successfully ");
 		}
-
 	}
 	
 	void createTempTable(String tname, String temptname) throws IOException {
@@ -1835,7 +1851,6 @@ public class entryClass {
 	}
 
 	private static void createTable() throws IOException {
-
 		Scanner sc = new Scanner(System.in);
 		String dt;
 		System.out.println("Enter the table name:");
@@ -1853,7 +1868,6 @@ public class entryClass {
 		boolean loop=true;
 		if (tablename.contains(tname))
 			System.out.println("Table already exists!");
-
 		else {
 			BufferedWriter br = new BufferedWriter(new FileWriter(tname + "_meta.txt"));
 			System.out.println("Enter the number of columns in the table:");
@@ -1871,6 +1885,8 @@ public class entryClass {
 			}
 			sc.reset();
 			System.out.println("Available data types: Integer(1) Float(2) String(3) Date(4) Boolean(5)");
+			br.write(tname+"_pkey 1");
+			br.newLine();
 			for (int i = 0; i < count; i++) {
 				String line;
 				sc.nextLine();
@@ -1888,10 +1904,8 @@ public class entryClass {
 				} while (!types.contains(dt));
 				br.write(line + " " + dt);
 				br.newLine();
-
 			}
 			br.close();
-
 			File file = new File(tname + ".json");
 			if (!file.exists()) {
 				file.createNewFile();
@@ -1901,18 +1915,26 @@ public class entryClass {
 			fw.close();
 			String primkey;
 			sc.nextLine();
-			do {
-				System.out.println("What is the primary key for this Table: ");
-				primkey = sc.nextLine();
-			} while (!colNames.contains(primkey));
+//			do {
+//				System.out.println("What is the primary key for this Table: ");
+//				primkey = sc.nextLine();
+//			} while (!colNames.contains(primkey));
+			primkey=tname+"_pkey";
 			tablekey.put(tname, primkey);
 			tablename.add(tname);
 			System.out.println("New Table " + tname + " Created. ");
+			///new file for unique
+			
+			File fileunique = new File(tname + ".json");
+			if (!fileunique.exists()) {
+				fileunique.createNewFile();
+			}
+			FileWriter funique = new FileWriter(tname + "_unique.txt");
+			funique.write("0");
+			funique.close();
 			
 			writetoTableList();
 			writetoKeyMeta();
-
 		}
-
 	}
 }
