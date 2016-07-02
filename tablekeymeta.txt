@@ -1,5 +1,2 @@
 movie movieID
 artist artistID
-temporary_temp temporary_uniquePrimKey
-movie_temp movieID
-tempfile movieID
