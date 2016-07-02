@@ -638,7 +638,6 @@ public class entryClass {
 							if (flag == false) {
 
 								// handling for string data types
-								printColNames(list);
 								for (int i = 0; i < len; i++) {
 									obj = (JSONObject) content.get(i);
 									if (obj.get(columnName).equals(valueToSearch)) {
@@ -650,7 +649,6 @@ public class entryClass {
 								if (checkDataType == 1) {
 									try {
 										if (operator.equals("<")) {
-											printColNames(list);
 											for (int i = 0; i < len; i++) {
 												obj = (JSONObject) content.get(i);
 												if (Integer.parseInt(obj.get(columnName).toString()) < Integer
@@ -659,7 +657,6 @@ public class entryClass {
 												}
 											}
 										} else if (operator.equals(">")) {
-											printColNames(list);
 											for (int i = 0; i < len; i++) {
 												obj = (JSONObject) content.get(i);
 												if (Integer.parseInt(obj.get(columnName).toString()) > Integer
@@ -668,7 +665,6 @@ public class entryClass {
 												}
 											}
 										} else if (operator.equals("=")) {
-											printColNames(list);
 											for (int i = 0; i < len; i++) {
 												obj = (JSONObject) content.get(i);
 												if (Integer.parseInt(obj.get(columnName).toString()) == Integer
@@ -684,7 +680,6 @@ public class entryClass {
 								} else if (checkDataType == 2) {
 									try {
 										if (operator.equals("<")) {
-											printColNames(list);
 											for (int i = 0; i < len; i++) {
 												obj = (JSONObject) content.get(i);
 												if (Float.parseFloat(obj.get(columnName).toString()) < Float
@@ -693,7 +688,6 @@ public class entryClass {
 												}
 											}
 										} else if (operator.equals(">")) {
-											printColNames(list);
 											for (int i = 0; i < len; i++) {
 												obj = (JSONObject) content.get(i);
 												if (Float.parseFloat(obj.get(columnName).toString()) > Float
@@ -702,14 +696,12 @@ public class entryClass {
 												}
 											}
 										} else if (operator.equals("=")) {
-											printColNames(list);
 											for (int i = 0; i < len; i++) {
 												obj = (JSONObject) content.get(i);
 												if (Float.parseFloat(obj.get(columnName).toString()) == Float
 														.parseFloat(valueToSearch)) {
 													content2.add(obj);
 												}
-
 											}
 										}
 									} catch (Exception e) {
@@ -732,7 +724,6 @@ public class entryClass {
 				} catch (IOException io) {
 					System.out.println("IOException in search method");
 					io.printStackTrace();
-
 				}
 			}
 		}
