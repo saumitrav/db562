@@ -137,6 +137,34 @@ public class entryClass {
 		}
 		System.out.println();
 	}
+	
+	void printTable(String tname) throws FileNotFoundException, IOException, ParseException {
+		String name;
+		ArrayList<String> list = new ArrayList<>();
+		JSONObject obj = new JSONObject();
+		JSONParser parser = new JSONParser();
+		
+		BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+		while ((name = br.readLine()) != null) {
+			String s[] = name.split(" ");
+			list.add(s[0]);
+		}
+		br.close();
+		
+		JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+		int len = content.size();
+		
+		if (content != null) {
+			printColNames(list);
+			for (int i = 0; i < len; i++) {
+				obj = (JSONObject) content.get(i);
+				for (int j = 0; j < list.size(); j++) {
+						System.out.print(obj.get(list.get(j)) + "\t\t\t");
+				}
+				System.out.println();
+			}
+		}
+	}
 
 	private static void menu() throws IOException, ParseException {
 
@@ -338,6 +366,7 @@ public class entryClass {
 			String name;
 			JSONParser parser = new JSONParser();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+			JSONArray content2 = new JSONArray();
 
 			ArrayList<String> list = new ArrayList<>();
 			ArrayList<String> sortedListStr = new ArrayList<>();
@@ -388,7 +417,7 @@ public class entryClass {
 					}
 				}
 
-				printColNames(list);
+//				printColNames(list);
 
 				for (int i = 0; i < len; i++) {
 					for (int k = 0; k < len; k++) {
@@ -408,8 +437,12 @@ public class entryClass {
 							}
 						}
 					}
-					printObj(list, obj);
+//					printObj(list, obj);
+					content2.add(obj);
 				}
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write(content2.toJSONString());
+				file.close();
 			}
 		}
 	}
