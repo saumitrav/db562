@@ -1283,6 +1283,110 @@ public class entryClass {
 		}
 
 	}
+	
+	void insertSQL(String tname, ArrayList<String> attributeList, ArrayList<String> valueList)
+			throws IOException, ParseException {
+
+		String name;
+		String pkey = null;
+		String keyline;
+		Object value = null;
+		JSONObject obj;
+		JSONParser parser = new JSONParser();
+		org.json.simple.JSONObject newObj = new org.json.simple.JSONObject();
+		ArrayList<String> list = new ArrayList<>();
+		boolean flag = false;
+
+		if (!tablename.contains(tname)) {
+			System.out.println("Table doesn't Exist");
+		} else {
+			BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
+			while ((keyline = filekey.readLine()) != null) {
+				String s[] = keyline.split(" ");
+				if (s[0].equals(tname)) {
+					pkey = s[1];
+					flag = true;
+				}
+			}
+			filekey.close();
+
+			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+			int len = content.size();
+			if (content != null && flag == true) {
+				for (int i = 0; i < len; i++) {
+					obj = (JSONObject) content.get(i);
+					list.add(obj.get(pkey).toString());
+				}
+			}
+
+			// checks on attribute list and values
+			BufferedReader br2 = new BufferedReader(new FileReader(tname + "_meta.txt"));
+			while ((name = br2.readLine()) != null) {
+				String s[] = name.split(" ");
+				if (!attributeList.contains(s[0])) {
+					System.out.println("Attribute missing. Wrong insert SQL!");
+				}
+			}
+			br2.close();
+			if (attributeList.size() != valueList.size()) {
+				System.out.println("Value missing. Wrong insert SQL!");
+			}
+
+			BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+			while ((name = br.readLine()) != null) {
+				String s[] = name.split(" ");
+				int index = attributeList.indexOf(s[0]);
+
+				if (Integer.parseInt(s[1]) == 1) {
+					try {
+						value = Integer.parseInt(valueList.get(index));
+					} catch (Exception e) {
+						System.out.println("Invalid value for: " + attributeList.get(index));
+						break;
+					}
+				} else if (Integer.parseInt(s[1]) == 2) {
+					try {
+						value = Float.parseFloat(valueList.get(index));
+					} catch (Exception e) {
+						System.out.println("Invalid value for: " + attributeList.get(index));
+						break;
+					}
+				} else if (Integer.parseInt(s[1]) == 5) {
+					try {
+						value = Boolean.parseBoolean(valueList.get(index));
+					} catch (Exception e) {
+						System.out.println("Invalid value for: " + attributeList.get(index));
+						break;
+					}
+				} else if (Integer.parseInt(s[1]) == 4) {
+					DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+					Date date = null;
+					try {
+						value = valueList.get(index);
+						date = format.parse(value.toString());
+					} catch (Exception e) {
+						System.out.println("Invalid value for: " + attributeList.get(index));
+						break;
+					}
+				} else {
+					value = valueList.get(index);
+				}
+				newObj.put(s[0], value);
+			}
+			br.close();
+
+			if (content.size() != 0 && list.contains(newObj.get(pkey).toString())) {
+				System.out.println("Primary key already exists. Record cannot be added.");
+			} else {
+				content.add(newObj);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+				System.out.println("\nRecord added successfully.");
+			}
+		}
+	}
 
 	private static void inserttoTable() throws IOException, ParseException {
 
