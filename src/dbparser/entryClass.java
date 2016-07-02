@@ -583,6 +583,9 @@ public class entryClass {
 			String columnName = currCond[0].trim();
 			String operator = currCond[1].trim();
 			String valueToSearch = currCond[2].trim();
+			if(valueToSearch.contains("'")){
+				valueToSearch = valueToSearch.replace("'", "");
+			}
 			
 			JSONArray content = null;
 			JSONArray content2 = new JSONArray();
