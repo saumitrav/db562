@@ -2079,7 +2079,6 @@ public class entryClass {
 				System.out.println("\nPrimary key not found. Returning to main menu.");
 			}
 		}
-
 	}
 	
 	void insertSQL(String tname, ArrayList<String> attributeList, ArrayList<String> valueList)
@@ -2090,10 +2089,12 @@ public class entryClass {
 		String keyline;
 		Object value = null;
 		JSONObject obj;
+		long recid;
+		BTree tree;
 		JSONParser parser = new JSONParser();
 		org.json.simple.JSONObject newObj = new org.json.simple.JSONObject();
-		ArrayList<String> list = new ArrayList<>();
-		boolean flag = false;
+//		ArrayList<String> list = new ArrayList<>();
+//		boolean flag = false;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't Exist");
@@ -2103,26 +2104,36 @@ public class entryClass {
 				String s[] = keyline.split(" ");
 				if (s[0].equals(tname)) {
 					pkey = s[1];
-					flag = true;
+//					flag = true;
 				}
 			}
+			filekey.close();
+			
+			// read content for unique key value
+			filekey = new BufferedReader(new FileReader(tname + "_unique.txt"));
+			keyline = filekey.readLine();
+			String sunique[] = keyline.split(" ");
+			Integer uniquekey = Integer.parseInt(sunique[0]);
 			filekey.close();
 
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null && flag == true) {
-				for (int i = 0; i < len; i++) {
-					obj = (JSONObject) content.get(i);
-					list.add(obj.get(pkey).toString());
-				}
-			}
+//			if (content != null && flag == true) {
+//				for (int i = 0; i < len; i++) {
+//					obj = (JSONObject) content.get(i);
+//					list.add(obj.get(pkey).toString());
+//				}
+//			}
 
 			// checks on attribute list and values
 			BufferedReader br2 = new BufferedReader(new FileReader(tname + "_meta.txt"));
 			while ((name = br2.readLine()) != null) {
 				String s[] = name.split(" ");
-				if (!attributeList.contains(s[0])) {
-					System.out.println("Attribute missing. Wrong insert SQL!");
+				if (!s[0].equals(tname + "_pkey")) {
+					if (!attributeList.contains(s[0])) {
+						System.out.println("Attribute missing. Wrong insert SQL!");
+						return;
+					}
 				}
 			}
 			br2.close();
@@ -2131,6 +2142,10 @@ public class entryClass {
 			}
 
 			BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+			br.readLine();
+			newObj.put(tname+"_pkey", uniquekey);
+			uniquekey++;
+			
 			while ((name = br.readLine()) != null) {
 				String s[] = name.split(" ");
 				int index = attributeList.indexOf(s[0]);
@@ -2173,15 +2188,29 @@ public class entryClass {
 			}
 			br.close();
 
-			if (content.size() != 0 && list.contains(newObj.get(pkey).toString())) {
-				System.out.println("Primary key already exists. Record cannot be added.");
+			// writing to the table's json file
+			content.add(newObj);
+			FileWriter file = new FileWriter(tname + ".json");
+			file.write("");
+			file.write(content.toJSONString());
+			file.close();
+			System.out.println("\nRecord added successfully.");
+
+			// write file content to unique file
+			FileWriter writerunique = new FileWriter(tname + "_unique.txt");
+			writerunique.write("");
+			writerunique.write(uniquekey.toString());
+			writerunique.close();
+
+			//
+			// writing to b tree
+			recid = recman.getNamedObject(tname + "_btree");
+			if (recid != 0) {
+				tree = BTree.load(recman, recid);
+				tree.insert(uniquekey - 1, content.size() - 1, false);
+				recman.commit();
 			} else {
-				content.add(newObj);
-				FileWriter file = new FileWriter(tname + ".json");
-				file.write("");
-				file.write(content.toJSONString());
-				file.close();
-				System.out.println("\nRecord added successfully.");
+				System.out.println("Adding index failed");
 			}
 		}
 	}
