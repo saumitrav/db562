@@ -77,7 +77,7 @@ public class entryClass {
 		props = new Properties();
 		recman = RecordManagerFactory.createRecordManager(DATABASE, props );
 		menu();
-		searchOnPrimKey("test", "<", 0);		
+//		searchOnPrimKey("test", "<", 0);		
 		/// load all changes to file again
 		FileWriter writer = new FileWriter("tableList.txt");
 		writer.write("");
@@ -105,7 +105,7 @@ public class entryClass {
 		brw2.close();
 
 	}
-	private static void searchOnPrimKey(String tname, String opr, int value) throws IOException, ParseException
+	public void searchOnPrimKey(String tname, String opr, int value) throws IOException, ParseException
 	{
 		long recid;
 		BTree tree=null;
@@ -135,7 +135,7 @@ public class entryClass {
 		            	if(obj!=null)
 		            		location=(int)obj;
 		            	else{
-		            		createTempTable(tname, tname+"_temp");
+//		            		createTempTable(tname, tname+"_temp");
 		            		FileWriter file = new FileWriter(tname + "_temp.json");
 		        			file.write("");
 		        			file.write(list.toJSONString());
@@ -145,7 +145,7 @@ public class entryClass {
 		            	if(location<content.size())
 		            	{
 		            		object=(JSONObject) content.get(location);
-		            		createTempTable(tname, tname+"_temp");
+//		            		createTempTable(tname, tname+"_temp");
 		            		list.add(object);
 		            		FileWriter file = new FileWriter(tname + "_temp.json");
 		        			file.write("");
@@ -163,7 +163,7 @@ public class entryClass {
 		            if(tree!=null)
 		            {
 		            	browser = tree.browse(value);
-		            	createTempTable(tname, tname+"_temp");
+//		            	createTempTable(tname, tname+"_temp");
 		            	while ( browser.getNext( tuple ) ) {
 		                    location=(int)tuple.getValue();
 		                
@@ -191,7 +191,7 @@ public class entryClass {
 		            if(tree!=null)
 		            {
 		            	browser = tree.browse(value);
-		            	createTempTable(tname, tname+"_temp");
+//		            	createTempTable(tname, tname+"_temp");
 		            	while ( browser.getPrevious( tuple ) ) {
 		                    location=(int)tuple.getValue();
 		                
@@ -641,6 +641,12 @@ public class entryClass {
 		}
 	}
 
+	public String getPkey(String table){
+		if(tablekey.containsKey(table)){
+			return tablekey.get(table);
+		}
+		return "-1";
+	}
 	
 	private static void sortTablelist(String tname, JSONArray content, ArrayList<String> colname) throws IOException, ParseException {
 //		System.out.println("Enter Table Name: ");
