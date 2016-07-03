@@ -193,6 +193,8 @@ public class parser {
 		
 		//printing the table
 		entry.printTable(tableList.get(0)+"_temp");
+		
+		entry.deleteTempTable(tableList.get(0) + "_temp");
 	}
 
 	private static void parseInsert(String inSQL) throws IOException, ParseException {
@@ -255,11 +257,90 @@ public class parser {
 		entry.insertSQL(table, attributeList, valueList);
 	}
 
-	private static void parseUpdate(String inSQL) {
-		//parse
-		//apply where conditions if any
-		//get the records that are to be updated in a new file with the updated values
-		//search the original file and replace the rows in the file generated above in place of existing rows in the table
+	private static void parseUpdate(String inSQL) throws IOException, ParseException {
+		// 1. parse and apply where conditions if any
+		// 2. get the records that are to be updated in a new file with the updated values
+		// 3. search the original file and replace the rows in the file generated
+		// above in place of existing rows in the table
+		
+		String whereCond = "";
+		String setVals = "";
+		String table = "";
+		boolean andFlag = false;
+		boolean orFlag = false;
+		boolean whereFlag = false;
+		ArrayList<String> condList = new ArrayList<String>();
+		ArrayList<String> setList = new ArrayList<String>();
+
+		String delimUpd = "update\\s+|UPDATE\\s+";
+		String[] withoutUpd = inSQL.split(delimUpd);
+
+		if (!withoutUpd[1].equals(null) && withoutUpd[1].toLowerCase().contains(" set ")) {
+			String delimSet = " set | SET ";
+			String[] withoutSet = withoutUpd[1].split(delimSet);
+			table = withoutSet[0].trim();
+
+			if (!withoutSet[1].toLowerCase().contains(" where ")) {
+				setVals = withoutSet[1].replace(";", "").trim();
+			} else {
+				whereFlag = true;
+				String[] withoutWhere = withoutSet[1].split(" where | WHERE ");
+				whereCond = withoutWhere[1].replace(";", "").trim();
+				setVals = withoutWhere[0];
+			}
+
+			String[] setConds = setVals.split(",");
+			for (String str : setConds) {
+				if (!str.trim().isEmpty() && !str.trim().equals("")) {
+					setList.add(str.trim());
+				}
+			}
+
+			if (whereFlag) {
+				if (whereCond.toLowerCase().contains(" and ") || whereCond.toLowerCase().contains(" or ")) {
+					String[] where = whereCond.split(" and | AND | or | OR ");
+					for (String str : where) {
+						if (!str.trim().isEmpty() && !str.trim().equals("")) {
+							condList.add(str.trim());
+						}
+					}
+					if (whereCond.toLowerCase().contains(" and ")) {
+						andFlag = true;
+					} else {
+						orFlag = true;
+					}
+				} else {
+					condList.add(whereCond.trim());
+					andFlag = true;
+				}
+			}
+		} else {
+			System.out.println("Wrong SQL!");
+		}
+		
+		// creating a temp file to perform operations on
+		entryClass entry = new entryClass();
+		entry.createTempTable(table, table + "_temp");
+		
+		//applying where conditions
+		if(whereFlag){
+			if(whereFlag){
+				if(andFlag){
+					entry.searchForSQL(table+"_temp", condList);
+				}else if(orFlag){
+					//TODO code for OR in where
+				}
+			}
+		}
+		
+		//get primary keys of values to be updated
+		ArrayList<String> pkeys = entry.getPkeys(table+"_temp");
+		
+		//update table
+		entry.updateSQL(table,setList,pkeys);
+		System.out.println("Updated successfully!");
+		
+		entry.deleteTempTable(table + "_temp");
 	}
 
 	private static void parseDelete(String inSQL) throws IOException, ParseException {
@@ -312,5 +393,7 @@ public class parser {
 		} else if (orFlag) {
 			// TODO code for OR in where
 		}
+
+		entry.deleteTempTable(table + "_temp");
 	}
 }

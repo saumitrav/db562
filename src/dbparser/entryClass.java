@@ -358,6 +358,36 @@ public class entryClass {
 			}
 		}
 	}
+	
+	public ArrayList<String> getPkeys(String tname) throws IOException, ParseException {
+		ArrayList<String> pkeys = new ArrayList<String>();
+		JSONParser parser = new JSONParser();
+		JSONObject obj = new JSONObject();
+		String name = "";
+		String pkey = "";
+
+		// find primary key of the table
+		BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
+		while ((name = br.readLine()) != null) {
+			String s[] = name.split(" ");
+			if (s[0].equals(tname)) {
+				pkey = s[1];
+			}
+		}
+		br.close();
+
+		JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+		int len = content.size();
+		if (content != null) {
+			for (int i = 0; i < len; i++) {
+				obj = (JSONObject) content.get(i);
+				if (!obj.get(pkey).toString().equals("")) {
+					pkeys.add(obj.get(pkey).toString());
+				}
+			}
+		}
+		return pkeys;
+	}
 
 	void sortTableSQL(String tname, String orderBy, boolean ascending) throws IOException, ParseException {
 		if (!tablename.contains(tname)) {
@@ -1321,6 +1351,111 @@ public class entryClass {
 		}
 
 	}
+	
+	public void updateSQL(String tname, ArrayList<String> setList, ArrayList<String> pkeys)
+			throws IOException, ParseException {
+		// getting attributes and their updated values in the lists
+		ArrayList<String> attribute = new ArrayList<String>();
+		ArrayList<String> values = new ArrayList<String>();
+
+		for (String str : setList) {
+			String delims = "((?<==)|(?==))";
+			String[] currSet = str.split(delims);
+			String columnName = currSet[0].trim();
+			String operator = currSet[1].trim();
+			String valueToUpdate = currSet[2].trim();
+			if (!operator.equals("=")) {
+				System.out.println("Invalid operator in set: " + str);
+				break;
+			}
+			if (valueToUpdate.contains("'")) {
+				valueToUpdate = valueToUpdate.replace("'", "");
+			}
+			attribute.add(columnName);
+			values.add(valueToUpdate);
+		}
+
+		String name;
+		String pkey = "";
+		Object value = null;
+		JSONParser parser = new JSONParser();
+		JSONObject obj;
+		JSONObject obj2;
+		boolean flag = false, loop = false;
+
+		BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
+		while ((name = br.readLine()) != null) {
+			String s[] = name.split(" ");
+			if (s[0].equals(tname)) {
+				pkey = s[1];
+				flag = true;
+			}
+		}
+		br.close();
+		JSONArray list = new JSONArray();
+		JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+		int len = content.size();
+		if (content != null && flag == true) {
+			for (int i = 0; i < len; i++) {
+				obj = (JSONObject) content.get(i);
+				obj2 = obj;
+				if (pkeys.contains(obj.get(pkey).toString())) {
+					JSONObject newObj = new JSONObject();
+					newObj.put(pkey, obj.get(pkey).toString());
+					BufferedReader brmeta = new BufferedReader(new FileReader(tname + "_meta.txt"));
+					while ((name = brmeta.readLine()) != null) {
+						String s[] = name.split(" ");
+						if (!s[0].equals(pkey)) {
+							// check if present in attribute
+							if (attribute.contains(s[0])) {
+								int index = attribute.indexOf(s[0]);
+								if (Integer.parseInt(s[1]) == 1) {
+									try {
+										value = Integer.parseInt(values.get(index));
+									} catch (Exception e) {
+										System.out.println("Invalid value: " + values.get(index));
+									}
+								} else if (Integer.parseInt(s[1]) == 2) {
+									try {
+										value = Float.parseFloat(values.get(index));
+									} catch (Exception e) {
+										System.out.println("Invalid value: " + values.get(index));
+									}
+								} else if (Integer.parseInt(s[1]) == 5) {
+									try {
+										value = Boolean.parseBoolean(values.get(index));
+									} catch (Exception e) {
+										System.out.println("Invalid value: " + values.get(index));
+									}
+								} else if (Integer.parseInt(s[1]) == 4) {
+									DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+									Date date = null;
+									try {
+										value = values.get(index);
+										date = format.parse(value.toString());
+									} catch (Exception e) {
+										System.out.println("Invalid value: " + values.get(index));
+									}
+								} else {
+									value = values.get(index);
+								}
+							} else {
+								value = obj2.get(s[0]);
+							}
+							newObj.put(s[0], value);
+						}
+						obj = newObj;
+					}
+					brmeta.close();
+				}
+				list.add(obj);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(list.toJSONString());
+				file.close();
+			}
+		}
+	}
 
 	private static void updatefromTable() throws IOException, ParseException {
 
@@ -1777,6 +1912,24 @@ public class entryClass {
 			writetoTableList();
 			writetoKeyMeta();
 			System.out.println("\nTable deleted Successfully ");
+		}
+	}
+	
+	void deleteTempTable(String temptname) throws IOException {
+		// delete temp table if already present
+		if (tablename.contains(temptname)) {
+			tablename.remove(temptname);
+			tablekey.remove(temptname);
+			File file = new File(temptname + "_meta.txt");
+			if (file.exists()) {
+				file.delete();
+			}
+			file = new File(temptname + ".json");
+			if (file.exists()) {
+				file.delete();
+			}
+			writetoTableList();
+			writetoKeyMeta();
 		}
 	}
 	
