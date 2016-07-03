@@ -1,3 +1,5 @@
-test test_pkey
-test_temp test_pkey
-t1 t1_pkey
+test1_test2 test1_pkey
+movie movieID
+artist artistID
+tempfile movieID
+test1 test1_pkey

@@ -173,6 +173,13 @@ public class parser {
 
 		entryClass entry = new entryClass();
 		
+		for(String str:tableList){
+			if(!entry.tablename.contains(str)){
+				System.out.println("Table "+str+" does not exist!");
+				return;
+			}
+		}
+		
 		if(joinFlag){
 			//TODO handle wrong conditions when keys are not present and join tables
 		}else{
@@ -182,7 +189,32 @@ public class parser {
 		}
 		
 		if(whereFlag){
-			if(andFlag){
+			//get pkey of the table
+			//check if the condList contains that primary key
+			//remove that condition from condList and call function for search based on pkey
+			boolean pkeyFlag = false;
+			String pkey = entry.getPkey(tname);
+			String cond = "";
+			for (String str : condList) {
+				if (str.contains(pkey)) {
+					pkeyFlag = true;
+					cond = str;
+					break;
+				}
+			}
+			if (pkeyFlag) {
+				condList.remove(cond);
+				String[] currCond = cond.split("((?<=>|<|=)|(?=>|<|=))");
+				String operator = currCond[1].trim();
+				String valueToSearch = currCond[2].trim();
+				try {
+					Integer.parseInt(valueToSearch);
+				} catch (Exception e) {
+					System.out.println("Primary key attribute not an integer!");
+				}
+				entry.searchOnPrimKey(tname, operator, Integer.parseInt(valueToSearch));
+			}
+			if (andFlag) {
 				entry.searchForSQL(tname+"_temp", condList);
 			}else if(orFlag){
 				entry.searchForOrSQL(tname+"_temp", condList);
