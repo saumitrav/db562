@@ -1,2 +1,3 @@
-movie movieID
-artist artistID
+test test_pkey
+test_temp test_pkey
+t1 t1_pkey

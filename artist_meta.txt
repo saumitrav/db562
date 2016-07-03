@@ -1,4 +1,0 @@
-artistID 1
-name 3
-birthyear 1
-rating 2
