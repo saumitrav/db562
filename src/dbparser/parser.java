@@ -173,6 +173,13 @@ public class parser {
 
 		entryClass entry = new entryClass();
 		
+		for(String str:tableList){
+			if(!entry.tablename.contains(str)){
+				System.out.println("Table "+str+" does not exist!");
+				return;
+			}
+		}
+		
 		if(joinFlag){
 			//TODO handle wrong conditions when keys are not present and join tables
 		}else{
