@@ -778,27 +778,56 @@ public class entryClass {
 	private static void deleteRow(String tname, String pkey, String pkeyVal) throws IOException, ParseException {
 		JSONParser parser = new JSONParser();
 		JSONObject obj;
+		long recid;
+		BTree tree=null;
+		int prim = Integer.parseInt(pkeyVal);
+		int location = Integer.MAX_VALUE;
+		Tuple tuple = new Tuple();
+		TupleBrowser browser;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't exist!");
 		} else {
 
-			JSONArray list = new JSONArray();
+			recid = recman.getNamedObject(tname+"_btree");
+			if (recid != 0) {
+				tree = BTree.load(recman, recid);
+			}
+			Object loc = tree.find(prim);
+			if (loc != null) {
+				location = (int) tree.find(prim);
+			}
+			else return;
+			if (recid != 0) {
+//			JSONArray list = new JSONArray();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null) {
-				for (int i = 0; i < len; i++) {
-					obj = (JSONObject) content.get(i);
-					if (!obj.get(pkey).toString().equals(pkeyVal)) {
-						list.add(obj);
+			if (content != null && location < len) {
+//				for (int i = 0; i < len; i++) {
+//					obj = (JSONObject) content.get(i);
+//					if (!obj.get(pkey).toString().equals(pkeyVal)) {
+//						list.add(obj);
+//					}
+//				}
+				content.remove(location);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+				
+				browser=tree.browse();
+				while(browser.getNext(tuple)){
+					if((int)tuple.getKey()>prim){
+						tree.insert(tuple.getKey(), (int)tuple.getValue()-1, true);
 					}
 				}
+				tree.remove(prim);
+				recman.commit();
 			}
-			FileWriter file = new FileWriter(tname + ".json");
-			file.write("");
-			file.write(list.toJSONString());
-			file.close();
 			System.out.println("\n1 record deleted.");
+			}else{
+				System.out.println("\nPrimary key " + pkeyVal + "not found.");
+			}
 		}
 	}
 	
@@ -1839,152 +1868,144 @@ public class entryClass {
 		Object value = null;
 		JSONParser parser = new JSONParser();
 		JSONObject obj;
-		boolean flag = false, loop = false,loop2=false;
+		boolean flag = false, loop = false, loop2 = false;
 		long recid;
 		BTree tree = null;
-		int prim=0;
-		int location=Integer.MAX_VALUE;
-		
+		int prim = 0;
+		int location = Integer.MAX_VALUE;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't exist!");
 		} else {
-			
+
 			System.out.println("Enter Primary key Value: ");
-			loop2=true;
-			while(loop2){
-				try{
-			prim = sc.nextInt();
-			sc.nextLine();
-			loop2=false;
-				}
-				catch(InputMismatchException e)
-				{
+			loop2 = true;
+			while (loop2) {
+				try {
+					prim = sc.nextInt();
+					sc.nextLine();
+					loop2 = false;
+				} catch (InputMismatchException e) {
 					System.out.println("Invalid value!");
 					sc.nextLine();
 				}
 			}
-			//comented due to b+ tree
-//			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
-//			while ((name = br.readLine()) != null) {
-//				String s[] = name.split(" ");
-//				if (s[0].equals(tname)) {
-//					pkey = s[1];
-//					flag = true;
-//				}
-//			}
-//			br.close();
-			//addition due to b+ tree
-			pkey=tname+"_pkey";
+			// comented due to b+ tree
+			// BufferedReader br = new BufferedReader(new
+			// FileReader("tablekeymeta.txt"));
+			// while ((name = br.readLine()) != null) {
+			// String s[] = name.split(" ");
+			// if (s[0].equals(tname)) {
+			// pkey = s[1];
+			// flag = true;
+			// }
+			// }
+			// br.close();
+			// addition due to b+ tree
+			pkey = tname + "_pkey";
 			//
-			recid = recman.getNamedObject( tname+"_btree" );
-            if ( recid != 0 ) {
-                tree = BTree.load( recman, recid );
-                }
-            
-            Object loc =tree.find(prim);
-            if(loc!=null)
-            location=(int) tree.find(prim);
-           
+			recid = recman.getNamedObject(tname + "_btree");
+			if (recid != 0) {
+				tree = BTree.load(recman, recid);
+			}
+
+			Object loc = tree.find(prim);
+			if (loc != null)
+				location = (int) tree.find(prim);
+
 			JSONArray list = new JSONArray();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null && recid!=0 && location<len ) {
-//				for (int i = 0; i < len; i++) {
+			if (content != null && recid != 0 && location < len) {
+				// for (int i = 0; i < len; i++) {
 
-					obj = (JSONObject) content.get(location);
-					content.remove(location);
-//					if (obj.get(pkey).toString().equals(prim)) {
-						JSONObject newObj = new JSONObject();
-						newObj.put(pkey, prim);
-						BufferedReader brmeta = new BufferedReader(new FileReader(tname + "_meta.txt"));
-						while ((name = brmeta.readLine()) != null) {
-							String s[] = name.split(" ");
-							if (!s[0].equals(pkey)) {
-								System.out.println("Enter value for " + s[0]);
-								//
-								if (Integer.parseInt(s[1]) == 1) {
-									loop = true;
-									while (loop) {
-										try {
-											value = sc.nextInt();
-											sc.nextLine();
-											loop = false;
-										} catch (InputMismatchException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										}
-									}
+				obj = (JSONObject) content.get(location);
+				content.remove(location);
+				// if (obj.get(pkey).toString().equals(prim)) {
+				JSONObject newObj = new JSONObject();
+				newObj.put(pkey, prim);
+				BufferedReader brmeta = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				while ((name = brmeta.readLine()) != null) {
+					String s[] = name.split(" ");
+					if (!s[0].equals(pkey)) {
+						System.out.println("Enter value for " + s[0]);
+						//
+						if (Integer.parseInt(s[1]) == 1) {
+							loop = true;
+							while (loop) {
+								try {
+									value = sc.nextInt();
+									sc.nextLine();
+									loop = false;
+								} catch (InputMismatchException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
 								}
-								else if (Integer.parseInt(s[1]) == 2) {
-									loop = true;
-									while (loop) {
-										try {
-											value = sc.nextFloat();
-											sc.nextLine();
-											loop = false;
-										} catch (InputMismatchException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										}
-									}
-								}
-								else if (Integer.parseInt(s[1]) == 5) {
-									loop = true;
-									while (loop) {
-										try {
-											value = sc.nextBoolean();
-											sc.nextLine();
-											loop = false;
-										} catch (InputMismatchException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										}
-									}
-								}
-								else if (Integer.parseInt(s[1]) == 4) {
-									DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
-									loop = true;
-									Date date = null;
-									while (loop) {
-										try {
-											value = sc.next();
-											date = format.parse(value.toString());
-											sc.nextLine();
-											loop = false;
-										} catch (InputMismatchException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										} catch (java.text.ParseException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										}
-									}
-								} 
-								else {
-									value = sc.nextLine();
-								}
-								//
-
-								// value=sc.next();
-								newObj.put(s[0], value);
-
 							}
-							obj = newObj;
-
+						} else if (Integer.parseInt(s[1]) == 2) {
+							loop = true;
+							while (loop) {
+								try {
+									value = sc.nextFloat();
+									sc.nextLine();
+									loop = false;
+								} catch (InputMismatchException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
+								}
+							}
+						} else if (Integer.parseInt(s[1]) == 5) {
+							loop = true;
+							while (loop) {
+								try {
+									value = sc.nextBoolean();
+									sc.nextLine();
+									loop = false;
+								} catch (InputMismatchException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
+								}
+							}
+						} else if (Integer.parseInt(s[1]) == 4) {
+							DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+							loop = true;
+							Date date = null;
+							while (loop) {
+								try {
+									value = sc.next();
+									date = format.parse(value.toString());
+									sc.nextLine();
+									loop = false;
+								} catch (InputMismatchException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
+								} catch (java.text.ParseException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
+								}
+							}
+						} else {
+							value = sc.nextLine();
 						}
-						brmeta.close();
-						
+						//
 
-					//}
-					content.add(location, obj);
-					FileWriter file = new FileWriter(tname + ".json");
-					file.write("");
-					file.write(content.toJSONString());
-					file.close();
-					
-				//}
+						// value=sc.next();
+						newObj.put(s[0], value);
 
+					}
+					obj = newObj;
+
+				}
+				brmeta.close();
+
+				// }
+				content.add(location, obj);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+
+				// }
 			}
 		}
 	}
@@ -1995,87 +2016,87 @@ public class entryClass {
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
 		sc.nextLine();
-		String name;
-		String pkey = "";
+		// String name;
+		// String pkey = "";
 		JSONParser parser = new JSONParser();
-		JSONObject obj;
-		boolean flag = false;
+		// JSONObject obj;
+		// boolean flag = false;
 		long recid;
-		BTree tree=null;
-		int location=Integer.MAX_VALUE;
+		BTree tree = null;
+		int location = Integer.MAX_VALUE;
 		Tuple tuple = new Tuple();
-        TupleBrowser browser;
-        boolean loop2=false;
-        int prim=Integer.MAX_VALUE;
+		TupleBrowser browser;
+		boolean loop2 = false;
+		int prim = Integer.MAX_VALUE;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't exist!");
 		} else {
 			System.out.println("Enter Primary key Value: ");
-			loop2=true;
-			while(loop2){
-				try{
+			loop2 = true;
+			while (loop2) {
+				try {
 					prim = sc.nextInt();
 					sc.nextLine();
-					loop2=false;
-				}
-				catch(InputMismatchException e)
-				{
+					loop2 = false;
+				} catch (InputMismatchException e) {
 					System.out.println("Invalid value!");
 					sc.nextLine();
 				}
 			}
-			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
-//			while ((name = br.readLine()) != null) {
-//				String s[] = name.split(" ");
-//				if (s[0].equals(tname)) {
-//					pkey = s[1];
-//					flag = true;
-//				}
-//			}
-			br.close();
-			pkey=tname+"_pkey";
-			recid = recman.getNamedObject( tname+"_btree" );
-            if ( recid != 0 ) 
-                tree = BTree.load( recman, recid );
-            
-            Object loc =tree.find(prim);
-            if(loc!=null)
-            location=(int) tree.find(prim);
-			
-			if(recid!=0){
-			JSONArray list = new JSONArray();
-			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
-			int len = content.size();
-			if (content != null && location<len) {
-//				for (int i = 0; i < len; i++) {
-//					obj = (JSONObject) content.get(location);
-//					if (!obj.get(pkey).toString().equals(prim)) {
-//						list.add(obj);
-//					}
-				//}
-				content.remove(location);
-			
-			FileWriter file = new FileWriter(tname + ".json");
-			file.write("");
-			file.write(content.toJSONString());
-			file.close();
-			
-			//experimental
-			 browser=tree.browse();
-             while ( browser.getNext( tuple ) ) {
-             	//System.out.println( tuple.getKey()+" "+tuple.getValue());
-             if((int)tuple.getKey()>prim){
-            	 tree.insert(tuple.getKey(), (int)tuple.getValue()-1, true);
-             }	
-             }
-             tree.remove(prim);
-             recman.commit();
-			//
-			
-			System.out.println("\n1 record deleted.");
-			}
-			}else{
+			// BufferedReader br = new BufferedReader(new
+			// FileReader("tablekeymeta.txt"));
+			// while ((name = br.readLine()) != null) {
+			// String s[] = name.split(" ");
+			// if (s[0].equals(tname)) {
+			// pkey = s[1];
+			// flag = true;
+			// }
+			// }
+			// br.close();
+			// pkey=tname+"_pkey";
+			recid = recman.getNamedObject(tname + "_btree");
+			if (recid != 0)
+				tree = BTree.load(recman, recid);
+
+			Object loc = tree.find(prim);
+			if (loc != null)
+				location = (int) tree.find(prim);
+
+			if (recid != 0) {
+				// JSONArray list = new JSONArray();
+				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+				int len = content.size();
+				if (content != null && location < len) {
+					// for (int i = 0; i < len; i++) {
+					// obj = (JSONObject) content.get(location);
+					// if (!obj.get(pkey).toString().equals(prim)) {
+					// list.add(obj);
+					// }
+					// }
+					content.remove(location);
+
+					FileWriter file = new FileWriter(tname + ".json");
+					file.write("");
+					file.write(content.toJSONString());
+					file.close();
+
+					// experimental
+					browser = tree.browse();
+					while (browser.getNext(tuple)) {
+						// System.out.println( tuple.getKey()+"
+						// "+tuple.getValue());
+						if ((int) tuple.getKey() > prim) {
+							tree.insert(tuple.getKey(), (int) tuple.getValue() - 1, true);
+						}
+					}
+					tree.remove(prim);
+					recman.commit();
+					//
+
+					System.out.println("\n1 record deleted.");
+				}
+			} else {
 				System.out.println("\nPrimary key not found. Returning to main menu.");
 			}
 		}
@@ -2202,7 +2223,6 @@ public class entryClass {
 			writerunique.write(uniquekey.toString());
 			writerunique.close();
 
-			//
 			// writing to b tree
 			recid = recman.getNamedObject(tname + "_btree");
 			if (recid != 0) {
