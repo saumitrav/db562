@@ -41,6 +41,7 @@ public class parser {
 		String tables = "";
 		String whereCond = "";
 		String orderBy = "";
+		String tname = "";
 		ArrayList<String> tableList = new ArrayList<String>();
 		ArrayList<String> attributeList = new ArrayList<String>();
 		ArrayList<String> condList = new ArrayList<String>();
@@ -49,6 +50,7 @@ public class parser {
 		boolean ascending = true;
 		boolean andFlag = false;
 		boolean orFlag = false;
+		boolean joinFlag = false;
 
 		if (inSQL.toLowerCase().contains("select")) {
 			String delimSel = "select\\s*|SELECT\\s*";
@@ -126,8 +128,9 @@ public class parser {
 		if (tables.contains(",")) {
 			String[] tablestemp = tables.split("//s*,//s*");
 			for (String str : tablestemp) {
-				if (!str.isEmpty() && !str.equals(" ")) {
+				if (!str.isEmpty() && !str.equals("")) {
 					tableList.add(str.trim());
+					joinFlag = true;
 				}
 			}
 		} else {
@@ -168,33 +171,37 @@ public class parser {
 			}
 		}
 
-		//creating a temp file to perform operations on
 		entryClass entry = new entryClass();
-		entry.createTempTable(tableList.get(0), tableList.get(0)+"_temp");
 		
-		//TODO write code for join, if any
+		if(joinFlag){
+			//TODO handle wrong conditions when keys are not present and join tables
+		}else{
+			tname = tableList.get(0);
+			//creating a temp file to perform operations on
+			entry.createTempTable(tname, tname+"_temp");
+		}
 		
 		if(whereFlag){
 			if(andFlag){
-				entry.searchForSQL(tableList.get(0)+"_temp", condList);
+				entry.searchForSQL(tname+"_temp", condList);
 			}else if(orFlag){
-				//TODO code for OR in where
+				entry.searchForOrSQL(tname+"_temp", condList);
 			}
 		}
 		
 
 		//order by handling, if present
 		if(orderFlag){
-			entry.sortTableSQL(tableList.get(0)+"_temp", orderBy, ascending);
+			entry.sortTableSQL(tname+"_temp", orderBy, ascending);
 		}
 		
 		//taking projection/selection
-		entry.projectionForSQL(tableList.get(0)+"_temp", attributeList);
+		entry.projectionForSQL(tname+"_temp", attributeList);
 		
 		//printing the table
-		entry.printTable(tableList.get(0)+"_temp");
+		entry.printTable(tname+"_temp");
 		
-		entry.deleteTempTable(tableList.get(0) + "_temp");
+		entry.deleteTempTable(tname + "_temp");
 	}
 
 	private static void parseInsert(String inSQL) throws IOException, ParseException {
@@ -234,7 +241,7 @@ public class parser {
 					}
 				}
 			}else{
-				//TODO write regex for parsing!?
+				//TODO write regex for parsing!? this is for the next step, not this one
 			}
 		} else {
 			attributeList.add(attributes.trim());
