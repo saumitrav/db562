@@ -1,5 +1,0 @@
-movie movieID
-artist artistID
-tempfile movieID
-test1 test1_pkey
-temp1 temp1_pkey
