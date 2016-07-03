@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Scanner;
 
 import org.json.simple.JSONArray;
@@ -26,11 +27,21 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import jdbm.RecordManager;
+import jdbm.RecordManagerFactory;
+import jdbm.btree.BTree;
+import jdbm.helper.IntegerComparator;
+import jdbm.helper.StringComparator;
+import jdbm.helper.Tuple;
+import jdbm.helper.TupleBrowser;
+
 public class entryClass {
 
 	static ArrayList<String> tablename;
 	static HashMap<String, String> tablekey = new HashMap<String, String>();
-
+	static RecordManager recman;
+	static Properties props;
+	static String DATABASE = "dbproj2";
 	public static void main(String[] args) throws IOException, ParseException {
 
 		/// load file with all table names into arraylist
@@ -62,7 +73,9 @@ public class entryClass {
 		}
 
 		br.close();
-
+		
+		props = new Properties();
+		recman = RecordManagerFactory.createRecordManager(DATABASE, props );
 		menu();
 		
 		/// load all changes to file again
@@ -209,6 +222,7 @@ public class entryClass {
 				sortTable();
 				break;
 			case "10":
+				printBtree();
 				break;
 			case "11": 
 				String inSQL;
@@ -218,7 +232,9 @@ public class entryClass {
 				parser parse = new parser();
 				parse.parseSQL(inSQL);
 				break;
-			case "12":
+			case "12":	
+				break;
+			case "13":
 				break;
 			default:
 				System.out.println("Invalid Entry");
@@ -230,6 +246,42 @@ public class entryClass {
 			System.in.read();}
 
 		} while (!option.equals("12"));
+	}
+
+	private static void printBtreeArg(String tname) throws IOException {
+		
+		long recid;
+		BTree tree;
+		Tuple tuple = new Tuple();
+        TupleBrowser browser;
+		if(!tablename.contains(tname))
+			System.out.println("Table doesn't Exist");
+		else{
+			recid = recman.getNamedObject( tname+"_btree" );
+            if ( recid != 0 ) {
+                tree = BTree.load( recman, recid );
+                System.out.println( "Loaded BTree "+tname+" size " + tree.size() );
+                
+                
+                
+                browser=tree.browse();
+                while ( browser.getNext( tuple ) ) {
+                	System.out.println( tuple.getKey()+" "+tuple.getValue());
+                }
+                
+            }
+		}
+		
+		
+	}
+
+	private static void printBtree() throws IOException {
+		Scanner scan = new Scanner(System.in);
+		System.out.println("Enter name of the table");
+		String tname=scan.next();
+		scan.nextLine();
+		printBtreeArg(tname);
+		
 	}
 
 	private static void sortTable() throws IOException, ParseException {
@@ -1333,31 +1385,62 @@ public class entryClass {
 		Object value = null;
 		JSONParser parser = new JSONParser();
 		JSONObject obj;
-		boolean flag = false, loop = false;
+		boolean flag = false, loop = false,loop2=false;
+		long recid;
+		BTree tree = null;
+		int prim=0;
+		int location=Integer.MAX_VALUE;
+		
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't exist!");
 		} else {
+			
 			System.out.println("Enter Primary key Value: ");
-			String prim = sc.next();
+			loop2=true;
+			while(loop2){
+				try{
+			prim = sc.nextInt();
 			sc.nextLine();
-			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
-			while ((name = br.readLine()) != null) {
-				String s[] = name.split(" ");
-				if (s[0].equals(tname)) {
-					pkey = s[1];
-					flag = true;
+			loop2=false;
+				}
+				catch(InputMismatchException e)
+				{
+					System.out.println("Invalid value!");
+					sc.nextLine();
 				}
 			}
-			br.close();
+			//comented due to b+ tree
+//			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
+//			while ((name = br.readLine()) != null) {
+//				String s[] = name.split(" ");
+//				if (s[0].equals(tname)) {
+//					pkey = s[1];
+//					flag = true;
+//				}
+//			}
+//			br.close();
+			//addition due to b+ tree
+			pkey=tname+"_pkey";
+			//
+			recid = recman.getNamedObject( tname+"_btree" );
+            if ( recid != 0 ) {
+                tree = BTree.load( recman, recid );
+                }
+            
+            Object loc =tree.find(prim);
+            if(loc!=null)
+            location=(int) tree.find(prim);
+           
 			JSONArray list = new JSONArray();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null && flag == true) {
-				for (int i = 0; i < len; i++) {
+			if (content != null && recid!=0 && location<len ) {
+//				for (int i = 0; i < len; i++) {
 
-					obj = (JSONObject) content.get(i);
-					if (obj.get(pkey).toString().equals(prim)) {
+					obj = (JSONObject) content.get(location);
+					content.remove(location);
+//					if (obj.get(pkey).toString().equals(prim)) {
 						JSONObject newObj = new JSONObject();
 						newObj.put(pkey, prim);
 						BufferedReader brmeta = new BufferedReader(new FileReader(tname + "_meta.txt"));
@@ -1439,14 +1522,14 @@ public class entryClass {
 						brmeta.close();
 						
 
-					}
-					list.add(obj);
+					//}
+					content.add(location, obj);
 					FileWriter file = new FileWriter(tname + ".json");
 					file.write("");
-					file.write(list.toJSONString());
+					file.write(content.toJSONString());
 					file.close();
 					
-				}
+				//}
 
 			}
 		}
@@ -1463,39 +1546,81 @@ public class entryClass {
 		JSONParser parser = new JSONParser();
 		JSONObject obj;
 		boolean flag = false;
+		long recid;
+		BTree tree=null;
+		int location=Integer.MAX_VALUE;
+		Tuple tuple = new Tuple();
+        TupleBrowser browser;
+        boolean loop2=false;
+        int prim=Integer.MAX_VALUE;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't exist!");
 		} else {
 			System.out.println("Enter Primary key Value: ");
-			String prim = sc.next();
-			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
-			while ((name = br.readLine()) != null) {
-				String s[] = name.split(" ");
-				if (s[0].equals(tname)) {
-					pkey = s[1];
-					flag = true;
+			loop2=true;
+			while(loop2){
+				try{
+					prim = sc.nextInt();
+					sc.nextLine();
+					loop2=false;
+				}
+				catch(InputMismatchException e)
+				{
+					System.out.println("Invalid value!");
+					sc.nextLine();
 				}
 			}
+			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
+//			while ((name = br.readLine()) != null) {
+//				String s[] = name.split(" ");
+//				if (s[0].equals(tname)) {
+//					pkey = s[1];
+//					flag = true;
+//				}
+//			}
 			br.close();
-
-			if(flag == true){
+			pkey=tname+"_pkey";
+			recid = recman.getNamedObject( tname+"_btree" );
+            if ( recid != 0 ) 
+                tree = BTree.load( recman, recid );
+            
+            Object loc =tree.find(prim);
+            if(loc!=null)
+            location=(int) tree.find(prim);
+			
+			if(recid!=0){
 			JSONArray list = new JSONArray();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null) {
-				for (int i = 0; i < len; i++) {
-					obj = (JSONObject) content.get(i);
-					if (!obj.get(pkey).toString().equals(prim)) {
-						list.add(obj);
-					}
-				}
-			}
+			if (content != null && location<len) {
+//				for (int i = 0; i < len; i++) {
+//					obj = (JSONObject) content.get(location);
+//					if (!obj.get(pkey).toString().equals(prim)) {
+//						list.add(obj);
+//					}
+				//}
+				content.remove(location);
+			
 			FileWriter file = new FileWriter(tname + ".json");
 			file.write("");
-			file.write(list.toJSONString());
+			file.write(content.toJSONString());
 			file.close();
+			
+			//experimental
+			 browser=tree.browse();
+             while ( browser.getNext( tuple ) ) {
+             	//System.out.println( tuple.getKey()+" "+tuple.getValue());
+             if((int)tuple.getKey()>prim){
+            	 tree.insert(tuple.getKey(), (int)tuple.getValue()-1, true);
+             }	
+             }
+             tree.remove(prim);
+             recman.commit();
+			//
+			
 			System.out.println("\n1 record deleted.");
+			}
 			}else{
 				System.out.println("\nPrimary key not found. Returning to main menu.");
 			}
@@ -1623,6 +1748,8 @@ public class entryClass {
 		ArrayList<String> list = new ArrayList<>();
 		boolean flag = false;
 		String choice;
+		long recid;
+		BTree tree;
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't Exist");
 		} else {
@@ -1647,10 +1774,10 @@ public class entryClass {
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
 			if (content != null && flag == true) {
-				for (int i = 0; i < len; i++) {
-					obj = (JSONObject) content.get(i);
-					list.add(obj.get(pkey).toString());
-				}
+//				for (int i = 0; i < len; i++) {
+//					obj = (JSONObject) content.get(i);
+//					list.add(obj.get(pkey).toString());
+//				}
 			}
 			
 			BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
@@ -1724,22 +1851,33 @@ public class entryClass {
 			}
 			br.close();
 			
-			if (content.size()!=0 && list.contains(newObj.get(pkey).toString())) {
-				System.out.println("Primary key already exists. Record cannot be added.");
-			} else {
+//			if (content.size()!=0 && list.contains(newObj.get(pkey).toString())) {
+//				System.out.println("Primary key already exists. Record cannot be added.");
+//			} else {
 				content.add(newObj);
 				FileWriter file = new FileWriter(tname + ".json");
 				file.write("");
 				file.write(content.toJSONString());
 				file.close();
 				System.out.println("\nRecord added successfully.");
-			}
+			//}
 			//write file content to unique file
 			FileWriter writerunique = new FileWriter(tname+"_unique.txt");
 			writerunique.write("");
 			writerunique.write(uniquekey.toString());
 			writerunique.close();
 			
+			//
+			// writing to b tree
+			recid = recman.getNamedObject( tname+"_btree" );
+            if ( recid != 0 ) {
+                tree = BTree.load( recman, recid );
+                tree.insert( uniquekey-1, content.size()-1, false );
+                recman.commit();
+            }
+            else{
+            	System.out.println("Adding index failed");
+            }
 			//
 			System.out.println("Do you want to add another record? (y/n): ");
 			choice=sc.next();
@@ -1866,6 +2004,9 @@ public class entryClass {
 		int slen=0;
 		int count=0;
 		boolean loop=true;
+		long recid;
+		String Btreename = tname+"_btree";
+		BTree tree;
 		if (tablename.contains(tname))
 			System.out.println("Table already exists!");
 		else {
@@ -1933,8 +2074,12 @@ public class entryClass {
 			funique.write("0");
 			funique.close();
 			
+			tree = BTree.createInstance( recman, new IntegerComparator() );
+			recman.setNamedObject( Btreename, tree.getRecid() );
+			
 			writetoTableList();
 			writetoKeyMeta();
+			recman.commit();
 		}
 	}
 }

@@ -2,6 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="lib" path="C:/Users/prana/Documents/UB/DB/json-simple-1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Saumitra/Downloads/required jars/required jars/json-simple-1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Saumitra/Downloads/jdbm-1.0/jdbm-1.0/lib/jdbm-1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
