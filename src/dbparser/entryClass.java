@@ -752,7 +752,7 @@ public class entryClass {
 								// handling for string data types
 								for (int i = 0; i < len; i++) {
 									obj = (JSONObject) content.get(i);
-									if (obj.get(columnName).equals(valueToSearch)) {
+									if (obj.get(columnName).toString().equals(valueToSearch)) {
 										content2.add(obj);
 									}
 								}
@@ -876,6 +876,207 @@ public class entryClass {
 		}
 	}
 	
+	public void searchForOrSQL(String tableName, ArrayList<String> whereConds) throws IOException {
+		String line;
+		String pkey = "";
+		JSONObject obj;
+		JSONArray content2 = null;
+		JSONArray content3 = new JSONArray();
+		JSONParser parser = new JSONParser();
+		ArrayList<String> pkeyList = new ArrayList<>();
+		
+		// finding pkey
+		BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
+		while ((line = br.readLine()) != null) {
+			String s[] = line.split(" ");
+			if (s[0].equals(tableName)) {
+				pkey = s[1];
+				break;
+			}
+		}
+		br.close();
+
+		for (String cond : whereConds) {
+			String delims = "((?<=>|<|=)|(?=>|<|=))";
+			String[] currCond = cond.split(delims);
+			String columnName = currCond[0].trim();
+			String operator = currCond[1].trim();
+			String valueToSearch = currCond[2].trim();
+			if (valueToSearch.contains("'")) {
+				valueToSearch = valueToSearch.replace("'", "");
+			}
+
+			JSONArray content = null;
+			boolean flag = false;
+			boolean operatorFlag = false;
+			int checkDataType = 0;
+			ArrayList<String> list = new ArrayList<>();
+
+			if (operator.equals("=") || operator.equals("<") || operator.equals(">")) {
+				operatorFlag = true;
+			} else {
+				System.out.println("Where operator invalid!");
+			}
+
+			if (!tablename.contains(tableName)) {
+				System.out.println("Table does not exist!");
+			} else {
+				try {
+					BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
+					boolean columnNameFlag = false;
+					while ((line = bufferedReader.readLine()) != null) {
+						String s[] = line.split(" ");
+						list.add(s[0]);
+						if (s[0].equals(columnName)) {
+							columnNameFlag = true;
+							int temp = Integer.parseInt(s[1]);
+							if (temp == 1) {
+								flag = true;
+								checkDataType = 1;
+							} else if (temp == 2) {
+								flag = true;
+								checkDataType = 2;
+							}
+						}
+					}
+					bufferedReader.close();
+
+					if (columnNameFlag == false) {
+						System.out.println(
+								"The column name: " + columnName + " does not exist in given table: " + tableName);
+					} else {
+						try {
+							content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+						} catch (ParseException e) {
+							System.out.println("ParseException in search method");
+							e.printStackTrace();
+						}
+						int len = content.size();
+						if (content != null && operatorFlag == true) {
+							if (flag == false) {
+								// handling for string data types
+								for (int i = 0; i < len; i++) {
+									obj = (JSONObject) content.get(i);
+									if (obj.get(columnName).toString().equals(valueToSearch)) {
+										if(!pkeyList.contains(obj.get(pkey))){
+											pkeyList.add(obj.get(pkey).toString());
+										}
+									}
+								}
+							} else {
+								// handling for Integer
+								if (checkDataType == 1) {
+									try {
+										if (operator.equals("<")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) < Integer
+														.parseInt(valueToSearch)) {
+													if(!pkeyList.contains(obj.get(pkey))){
+														pkeyList.add(obj.get(pkey).toString());
+													}
+												}
+											}
+										} else if (operator.equals(">")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) > Integer
+														.parseInt(valueToSearch)) {
+													if(!pkeyList.contains(obj.get(pkey))){
+														pkeyList.add(obj.get(pkey).toString());
+													}
+												}
+											}
+										} else if (operator.equals("=")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) == Integer
+														.parseInt(valueToSearch)) {
+													if(!pkeyList.contains(obj.get(pkey))){
+														pkeyList.add(obj.get(pkey).toString());
+													}
+												}
+											}
+										}
+									} catch (Exception e) {
+										 System.out.println("The value: " + valueToSearch + " does not exist in this table");
+									}
+
+								} else if (checkDataType == 2) {
+									try {
+										if (operator.equals("<")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) < Float
+														.parseFloat(valueToSearch)) {
+													if(!pkeyList.contains(obj.get(pkey))){
+														pkeyList.add(obj.get(pkey).toString());
+													}
+												}
+											}
+										} else if (operator.equals(">")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) > Float
+														.parseFloat(valueToSearch)) {
+													if(!pkeyList.contains(obj.get(pkey))){
+														pkeyList.add(obj.get(pkey).toString());
+													}
+												}
+											}
+										} else if (operator.equals("=")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) == Float
+														.parseFloat(valueToSearch)) {
+													if(!pkeyList.contains(obj.get(pkey))){
+														pkeyList.add(obj.get(pkey).toString());
+													}
+												}
+											}
+										}
+									} catch (Exception e) {
+										 System.out.println("The value: " + valueToSearch + " does not exist in this table");
+									}
+								}
+							}
+						} else {
+							System.out.println(
+									"Unable to perform search. Please enter table name, column name and operator values correctly");
+						}
+					}
+
+				} catch (FileNotFoundException e) {
+					System.out.println("Unable to read file tablekeymeta.txt in search method");
+					e.printStackTrace();
+				} catch (IOException io) {
+					System.out.println("IOException in search method");
+					io.printStackTrace();
+				}
+			}
+		}
+		
+		//writing the rows found to temp file
+		try {
+			content2 = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+		} catch (ParseException e) {
+			System.out.println("ParseException in search method");
+			e.printStackTrace();
+		}
+		int len = content2.size();
+		if (content2 != null) {
+			for (int i = 0; i < len; i++) {
+				obj = (JSONObject) content2.get(i);
+				if (pkeyList.contains(obj.get(pkey).toString())) {
+					content3.add(obj);
+				}
+			}
+		}
+		FileWriter file = new FileWriter(tableName + ".json");
+		file.write(content3.toJSONString());
+		file.close();
+	}
+	
 	public void searchForSQL(String tableName, ArrayList<String> whereConds) {
 		
 		for (String cond : whereConds) {
@@ -944,7 +1145,7 @@ public class entryClass {
 								// handling for string data types
 								for (int i = 0; i < len; i++) {
 									obj = (JSONObject) content.get(i);
-									if (obj.get(columnName).equals(valueToSearch)) {
+									if (obj.get(columnName).toString().equals(valueToSearch)) {
 										content2.add(obj);
 									}
 								}
