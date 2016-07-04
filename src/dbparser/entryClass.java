@@ -111,6 +111,87 @@ public class entryClass {
 
 	}
 
+	private static void indexOnCol() throws IOException, ParseException
+	{
+		System.out.println("Enter Table Name: ");
+		Scanner sc = new Scanner(System.in);
+		String tname = sc.next();
+		String colname;
+		sc.nextLine();
+		String name;
+		boolean flag=false;
+		JSONParser parser = new JSONParser();
+		long recid;
+		BTree tree;
+		
+		if (!tablename.contains(tname)) {
+			 System.out.println("Table doesn't Exist");
+		} else {
+			
+				System.out.println("Enter column name");
+				colname=sc.next();
+				sc.nextLine();
+				BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				br.readLine();
+				while ((name = br.readLine()) != null) {
+					String s[] = name.split(" ");
+					if(s[0].equalsIgnoreCase(colname))flag=true;
+				}
+				//checking if column exist
+				if(flag==false){
+					System.out.println("No such column Exist");
+					return;
+				}
+				//checking if its a primary key
+				if(colname.equals(tname+"_pkey"))
+				{
+					System.out.println("Index on Primary key already exist");
+					return;
+				}
+				//checking if tree already exist
+				recid = recman.getNamedObject( tname+"_"+colname+"_btree" );
+	            if ( recid != 0 ) {
+	                System.out.println("Tree on "+colname+" already exist");
+	                return;
+	            } else {
+	                
+	                tree = BTree.createInstance( recman, new StringComparator() );
+	                recman.setNamedObject( tname+"_"+colname+"_btree", tree.getRecid() );
+	            }
+	            //load json array
+				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+				int len = content.size();
+				if (content != null ) {
+					//parsing through jsonarray
+					JSONObject obj=new JSONObject();
+					String cname;
+					Object object;
+					String forapp;
+					for(Integer i=0;i<len;i++)
+					{
+						obj=(JSONObject) content.get(i);
+						cname=obj.get(colname).toString();
+						object=tree.find(cname);
+						if(object==null)
+						{
+							tree.insert(cname, i, false);
+						}
+						else{
+							forapp=(String)object.toString();
+							forapp=forapp+","+i.toString();
+							tree.insert(cname, forapp, true);
+							
+						}
+					}
+					recman.commit();
+					System.out.println("Index on column "+colname+" created");
+					
+				}
+
+				
+				
+		}
+	}
 	private static void createJoinTable(String tname1, String tname2) throws IOException {
 		String name;
 		String tablenew = tname1 + "_" + tname2 + "_temp";
@@ -372,11 +453,12 @@ public class entryClass {
 			System.out.println("1)Create New Table\n2)Delete Existing Table\n3)List all tables in Database");
 			System.out.println(
 					"4)Insert Record into a Table\n5)Delete Record from a Table\n6)Update Record from a Table\n7)List content of a Table");
-			System.out.println("8)Search Record for an Attribute\n9)Sort Table\n10)Print B+ tree\n11)Enter SQL command\n12)Mass insert\n13)Exit");
+			System.out.println(
+					"8)Search Record for an Attribute\n9)Sort Table\n10)Print B+ tree\n11)Enter SQL command\n12)Mass insert\n13)Create Index on column\n14)Exit");
 			System.out.print("\nEnter your choice : ");
 			Scanner scan = new Scanner(System.in);
 			option = scan.next();
-			
+
 			switch (option) {
 			case "1":
 				createTable();
@@ -408,7 +490,7 @@ public class entryClass {
 			case "10":
 				printBtree();
 				break;
-			case "11": 
+			case "11":
 				String inSQL;
 				System.out.print("\nEnter the SQL statement : ");
 				scan.nextLine();
@@ -417,24 +499,27 @@ public class entryClass {
 				parser parse = new parser();
 				parse.parseSQL(inSQL);
 				long endTime = System.nanoTime();
-				System.out.println("\nTook "+(endTime - startTime)/1000000 + " milliseconds.");
+				System.out.println("\nTook " + (endTime - startTime) / 1000000 + " milliseconds.");
 				break;
-			case "12":massInsert();	
+			case "12":
+				massInsert();
 				break;
 			case "13":
+				indexOnCol();
+				break;
+			case "14":
 				break;
 			default:
 				System.out.println("Invalid Entry");
 				break;
 
 			}
+			if (!option.equals("14")) {
+				System.out.println("\nPress ENTER to Continue");
+				System.in.read();
+			}
 
-			if(!option.equals("13")){
-			System.out.println("\nPress ENTER to Continue");
-			System.in.read();}
-
-
-		} while (!option.equals("13"));
+		} while (!option.equals("14"));
 	}
 
 	private static void massInsert() throws IOException, ParseException {
@@ -544,9 +629,16 @@ public class entryClass {
 		BTree tree;
 		Tuple tuple = new Tuple();
         TupleBrowser browser;
+        Scanner sc = new Scanner(System.in);
+		String colname;
 		if(!tablename.contains(tname))
 			System.out.println("Table doesn't Exist");
 		else{
+			System.out.println("Enter column name or P for primary key");
+			colname=sc.next();
+			sc.nextLine();
+			if(colname.equalsIgnoreCase("p"))
+			{
 			recid = recman.getNamedObject( tname+"_btree" );
             if ( recid != 0 ) {
                 tree = BTree.load( recman, recid );
@@ -560,6 +652,24 @@ public class entryClass {
                 }
                 
             }
+		}
+			else{
+				recid = recman.getNamedObject( tname+"_"+colname+"_btree" );
+	            if ( recid != 0 ) {
+	                tree = BTree.load( recman, recid );
+	                System.out.println( "Loaded BTree "+tname+" size " + tree.size() );
+	                         
+	                browser=tree.browse();
+	                while ( browser.getNext( tuple ) ) {
+	                	System.out.println( tuple.getKey()+" "+tuple.getValue());
+	                }
+	                
+	            }
+	            else{
+	            	System.out.println("Index on "+colname+" doesnt exist");
+	            }
+				
+			}
 		}
 		
 		
@@ -2798,11 +2908,46 @@ public class entryClass {
             	System.out.println("Adding index failed");
             }
 			//
+            //adding index on columns
+            br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+			br.readLine();
+			
+			while ((name = br.readLine()) != null) {
+				String s[] = name.split(" ");
+				insertToColBTree(tname,s[0],newObj.get(s[0]).toString(),content.size()-1);
+			}
+            //
+            
 			System.out.println("Do you want to add another record? (y/n): ");
 			choice=sc.next();
 			sc.nextLine();
 			}while(choice.toLowerCase().equals("y"));
 		}
+	}
+	
+	private static void insertToColBTree(String tname,String colname,String key, Integer ind) throws IOException
+	{
+		long recid;
+		BTree tree;
+		Object obj;
+		String forapp;
+		recid = recman.getNamedObject( tname+"_"+colname+"_btree" );
+        if ( recid != 0 ) {
+            tree = BTree.load( recman, recid );
+            obj=tree.find(key);
+            if(obj==null)
+			{
+				tree.insert(key, ind, false);
+			}
+			else{
+				forapp=(String)obj.toString();
+				forapp=forapp+","+ind.toString();
+				tree.insert(key, forapp, true);
+				
+			}
+            
+            recman.commit();
+        }
 	}
 
 	private static void listTables() {
