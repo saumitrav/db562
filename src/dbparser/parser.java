@@ -97,8 +97,13 @@ public class parser {
 						orderBy = withoutSem[0];
 					} else {
 						String delimSem = "\\s*;\\s*";
+						try{
 						String[] withoutSem = withoutFrom[1].split(delimSem);
 						tables = withoutSem[0];
+						}catch(Exception e){
+							System.out.println("Wrong SQL!");
+							return;
+						}
 					}
 				}
 
@@ -107,9 +112,11 @@ public class parser {
 				}
 			} else {
 				System.out.println("Wrong SQL!");
+				return;
 			}
 		} else {
 			System.out.println("Wrong SQL!");
+			return;
 		}
 
 		// finding the attributes
@@ -126,14 +133,18 @@ public class parser {
 
 		// finding the tables
 		if (tables.contains(",")) {
-			String[] tablestemp = tables.split("//s*,//s*");
+			String[] tablestemp = tables.split(",");
 			for (String str : tablestemp) {
-				if (!str.isEmpty() && !str.equals("")) {
+				if (!str.trim().isEmpty() && !str.trim().equals("")) {
 					tableList.add(str.trim());
 					joinFlag = true;
 				}
 			}
 		} else {
+			if(tables.trim().equals("")){
+				System.out.println("No tables specified in the SQL!");
+				return;
+			}
 			tableList.add(tables.trim());
 		}
 
@@ -175,13 +186,40 @@ public class parser {
 		
 		for(String str:tableList){
 			if(!entry.tablename.contains(str)){
-				System.out.println("Table "+str+" does not exist!");
+				System.out.println("Table "+str+" does not exist! Wrong SQL!");
 				return;
 			}
 		}
 		
 		if(joinFlag){
-			//TODO handle wrong conditions when keys are not present and join tables
+			if(tableList.size()>2){
+				System.out.println("More than 2 tables. Cannot join. Returning to main menu!");
+				return;
+			}else{
+				String cond = "";
+				boolean flag = false;
+				for (String str : condList) {
+					if (str.contains("=")) {
+						String[] currCond = str.split("((?<==)|(?==))");
+						String pkey1 = currCond[0].trim();
+						String operator = currCond[1].trim();
+						String pkey2 = currCond[2].trim();
+						if (tableList.contains(pkey1.replace("_pkey", ""))
+								&& tableList.contains(pkey2.replace("_pkey", "")) && operator.equals("=")) {
+							flag = true;
+							cond = str;
+							break;
+						}
+					}
+				}
+				condList.remove(cond);
+				if(!flag){
+					System.out.println("Wrong/Absent join condition!");
+					return;
+				}
+				entry.joinOnPkey(tableList.get(0), tableList.get(1));
+				tname = tableList.get(0) + "_" + tableList.get(1);
+			}
 		}else{
 			tname = tableList.get(0);
 			//creating a temp file to perform operations on
@@ -210,14 +248,21 @@ public class parser {
 				try {
 					Integer.parseInt(valueToSearch);
 				} catch (Exception e) {
-					System.out.println("Primary key attribute not an integer!");
+					System.out.println("Value to search on the primary key is not integer!");
+					return;
 				}
-				entry.searchOnPrimKey(tname, operator, Integer.parseInt(valueToSearch));
+				entry.searchOnPrimKey(tname+"_temp", operator, Integer.parseInt(valueToSearch));
 			}
 			if (andFlag) {
-				entry.searchForSQL(tname+"_temp", condList);
+				int ret = entry.searchForSQL(tname+"_temp", condList);
+				if (ret == -1){
+					return;
+				}
 			}else if(orFlag){
-				entry.searchForOrSQL(tname+"_temp", condList);
+				int ret = entry.searchForOrSQL(tname+"_temp", condList);
+				if (ret == -1){
+					return;
+				}
 			}
 		}
 		
@@ -261,6 +306,7 @@ public class parser {
 
 		} else {
 			System.out.println("Wrong SQL!");
+			return;
 		}
 
 		// finding the attributes
@@ -330,6 +376,10 @@ public class parser {
 
 			String[] setConds = setVals.split(",");
 			for (String str : setConds) {
+				if(str.contains(table+"_pkey")){
+					System.out.println("Tried to update primary. Kindly never try this again.");
+					return;
+				}
 				if (!str.trim().isEmpty() && !str.trim().equals("")) {
 					setList.add(str.trim());
 				}
@@ -355,6 +405,7 @@ public class parser {
 			}
 		} else {
 			System.out.println("Wrong SQL!");
+			return;
 		}
 		
 		// creating a temp file to perform operations on
@@ -365,9 +416,15 @@ public class parser {
 		if(whereFlag){
 			if(whereFlag){
 				if(andFlag){
-					entry.searchForSQL(table+"_temp", condList);
+					int ret = entry.searchForSQL(table+"_temp", condList);
+					if (ret == -1){
+						return;
+					}
 				}else if(orFlag){
-					//TODO code for OR in where
+					int ret = entry.searchForOrSQL(table+"_temp", condList);
+					if (ret == -1){
+						return;
+					}
 				}
 			}
 		}
@@ -421,6 +478,7 @@ public class parser {
 
 		} else {
 			System.out.println("Wrong SQL!");
+			return;
 		}
 
 		// creating a temp file to perform operations on
@@ -430,7 +488,7 @@ public class parser {
 		if (andFlag) {
 			entry.deleteForSQL(table, condList);
 		} else if (orFlag) {
-			// TODO code for OR in where
+			entry.deleteForOrSQL(table, condList);
 		}
 
 		entry.deleteTempTable(table + "_temp");

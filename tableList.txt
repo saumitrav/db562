@@ -1,6 +1,0 @@
-tempfile
-movie
-artist
-test1
-test1_test2
-mass

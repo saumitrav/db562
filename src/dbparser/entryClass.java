@@ -80,8 +80,8 @@ public class entryClass {
 		recman = RecordManagerFactory.createRecordManager(DATABASE, props );
 		menu();
 
-		searchOnPrimKey("test1", "<", 2);
-		joinOnPkey("test1","test2");
+//		searchOnPrimKey("test1", "<", 2);
+//		joinOnPkey("test1","test2");
 
 		/// load all changes to file again
 		FileWriter writer = new FileWriter("tableList.txt");
@@ -111,108 +111,92 @@ public class entryClass {
 
 	}
 
-	private static void createJoinTable(String tname1, String tname2) throws IOException
-	{
+	private static void createJoinTable(String tname1, String tname2) throws IOException {
 		String name;
-		String tablenew=tname1+"_"+tname2;
-		File file = new File(tname1+"_"+tname2+".json");
+		String tablenew = tname1 + "_" + tname2 + "_temp";
+		File file = new File(tname1 + "_" + tname2 + "_temp.json");
 		if (file.exists())
 			file.delete();
 		file.createNewFile();
-		file = new File(tname1+"_"+tname2+"_meta.txt");
+		file = new File(tname1 + "_" + tname2 + "_temp_meta.txt");
 		if (file.exists())
 			file.delete();
 		file.createNewFile();
-		BufferedReader br = new BufferedReader(new FileReader(tname1+"_meta.txt"));
-		BufferedWriter brw = new BufferedWriter(new FileWriter(tname1+"_"+tname2+"_meta.txt"));
-		while ((name = br.readLine()) != null){
+		BufferedReader br = new BufferedReader(new FileReader(tname1 + "_meta.txt"));
+		BufferedWriter brw = new BufferedWriter(new FileWriter(tname1 + "_" + tname2 + "_temp_meta.txt"));
+		while ((name = br.readLine()) != null) {
 			brw.write(name);
 			brw.newLine();
-			
+
 		}
-		br = new BufferedReader(new FileReader(tname2+"_meta.txt"));
-		while ((name = br.readLine()) != null)
-			{
+		br = new BufferedReader(new FileReader(tname2 + "_meta.txt"));
+		while ((name = br.readLine()) != null) {
 			brw.write(name);
 			brw.newLine();
-			}
-		
+		}
+
 		brw.close();
-		if(!tablename.contains(tablenew))
+		if (!tablename.contains(tablenew))
 			tablename.add(tablenew);
-		tablekey.put(tablenew, tname1+"_pkey");
+		tablekey.put(tablenew, tname1 + "_pkey");
 		writetoTableList();
 		writetoKeyMeta();
-		
-		
-		
-		
-		
-		
+
 	}
 	
-	private static void joinOnPkey(String tname1, String tname2) throws FileNotFoundException, IOException, ParseException {
-		
+	public void joinOnPkey(String tname1, String tname2)
+			throws FileNotFoundException, IOException, ParseException {
+
 		JSONParser parser = new JSONParser();
 		long recid1;
 		long recid2;
-		BTree tree1=null;
+		BTree tree1 = null;
 		Tuple tuple1 = new Tuple();
-        TupleBrowser browser1;
-        BTree tree2=null;
+		TupleBrowser browser1;
+		BTree tree2 = null;
 		Tuple tuple2 = new Tuple();
-        TupleBrowser browser2;
-        JSONArray list=new JSONArray();
-        int location=Integer.MAX_VALUE;
-        Object obj;
+		TupleBrowser browser2;
+		JSONArray list = new JSONArray();
+		int location = Integer.MAX_VALUE;
+		Object obj;
 
-		if(!(tablename.contains(tname1) && tablename.contains(tname1)) ){
-			//System.out.println("Table doesn't Exist");
-		}
-		else{
-			
+		if (!(tablename.contains(tname1) && tablename.contains(tname2))) {
+			 System.out.println("Table doesn't Exist");
+		} else {
 			JSONArray content1 = (JSONArray) parser.parse(new FileReader(tname1 + ".json"));
 			JSONArray content2 = (JSONArray) parser.parse(new FileReader(tname2 + ".json"));
-			
-			recid1 = recman.getNamedObject( tname1+"_btree" );
-            if ( recid1 != 0 ) {
-                tree1 = BTree.load( recman, recid1 );
-            }
-            
 
-			recid2 = recman.getNamedObject( tname2+"_btree" );
-            if ( recid2 != 0 ) {
-                tree2 = BTree.load( recman, recid2 );
-            }
-            
-            if(tree1!=null && tree2!=null)
-            {
-            	browser1 = tree1.browse();
-            	createJoinTable(tname1, tname2);
-            	while ( browser1.getNext( tuple1 ) ) {
-                    location=(int)tuple1.getKey();
-                    obj= tree2.find(location);
-                    if(obj!=null){
-                    	
-                    	JSONObject object2=(JSONObject) content2.get((int)obj);
-                    	JSONObject object1=(JSONObject) content1.get((int)tuple1.getValue());
-                    	JSONObject combined = new JSONObject();
-                    	combined.putAll(object1);
-                    	combined.putAll(object2);
-                    	list.add(combined);
-                    	
-                    }
-                    }
-            	FileWriter file = new FileWriter(tname1+"_"+tname2+ ".json");
-    			file.write("");
-    			file.write(list.toJSONString());
-    			file.close();
-            }
-			
-			
+			recid1 = recman.getNamedObject(tname1 + "_btree");
+			if (recid1 != 0) {
+				tree1 = BTree.load(recman, recid1);
+			}
+
+			recid2 = recman.getNamedObject(tname2 + "_btree");
+			if (recid2 != 0) {
+				tree2 = BTree.load(recman, recid2);
+			}
+
+			if (tree1 != null && tree2 != null) {
+				browser1 = tree1.browse();
+				createJoinTable(tname1, tname2);
+				while (browser1.getNext(tuple1)) {
+					location = (int) tuple1.getKey();
+					obj = tree2.find(location);
+					if (obj != null) {
+						JSONObject object2 = (JSONObject) content2.get((int) obj);
+						JSONObject object1 = (JSONObject) content1.get((int) tuple1.getValue());
+						JSONObject combined = new JSONObject();
+						combined.putAll(object1);
+						combined.putAll(object2);
+						list.add(combined);
+					}
+				}
+				FileWriter file = new FileWriter(tname1 + "_" + tname2 + "_temp.json");
+				file.write("");
+				file.write(list.toJSONString());
+				file.close();
+			}
 		}
-
-		
 	}
 	
 	public static void searchOnPrimKey(String tname, String opr, int value) throws IOException, ParseException
@@ -414,7 +398,9 @@ public class entryClass {
 			System.out.print("\nEnter your choice : ");
 			Scanner scan = new Scanner(System.in);
 			option = scan.next();
-
+			
+			long startTime = System.nanoTime();
+			
 			switch (option) {
 			case "1":
 				createTable();
@@ -463,9 +449,13 @@ public class entryClass {
 				break;
 
 			}
+
+			long endTime = System.nanoTime();
+			System.out.println("\nTook "+(endTime - startTime)/1000000 + " milliseconds.");
 			if(!option.equals("13")){
 			System.out.println("\nPress ENTER to Continue");
 			System.in.read();}
+
 
 		} while (!option.equals("13"));
 	}
@@ -989,27 +979,271 @@ public class entryClass {
 	private static void deleteRow(String tname, String pkey, String pkeyVal) throws IOException, ParseException {
 		JSONParser parser = new JSONParser();
 		JSONObject obj;
+		long recid;
+		BTree tree=null;
+		int prim = Integer.parseInt(pkeyVal);
+		int location = Integer.MAX_VALUE;
+		Tuple tuple = new Tuple();
+		TupleBrowser browser;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't exist!");
 		} else {
 
-			JSONArray list = new JSONArray();
+			recid = recman.getNamedObject(tname+"_btree");
+			if (recid != 0) {
+				tree = BTree.load(recman, recid);
+			}
+			Object loc = tree.find(prim);
+			if (loc != null) {
+				location = (int) tree.find(prim);
+			}
+			else return;
+			if (recid != 0) {
+//			JSONArray list = new JSONArray();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null) {
-				for (int i = 0; i < len; i++) {
-					obj = (JSONObject) content.get(i);
-					if (!obj.get(pkey).toString().equals(pkeyVal)) {
-						list.add(obj);
+			if (content != null && location < len) {
+//				for (int i = 0; i < len; i++) {
+//					obj = (JSONObject) content.get(i);
+//					if (!obj.get(pkey).toString().equals(pkeyVal)) {
+//						list.add(obj);
+//					}
+//				}
+				content.remove(location);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+				
+				browser=tree.browse();
+				while(browser.getNext(tuple)){
+					if((int)tuple.getKey()>prim){
+						tree.insert(tuple.getKey(), (int)tuple.getValue()-1, true);
 					}
 				}
+				tree.remove(prim);
+				recman.commit();
 			}
-			FileWriter file = new FileWriter(tname + ".json");
-			file.write("");
-			file.write(list.toJSONString());
-			file.close();
 			System.out.println("\n1 record deleted.");
+			}else{
+				System.out.println("\nPrimary key " + pkeyVal + "not found.");
+			}
+		}
+	}
+	
+	public void deleteForOrSQL(String tableName, ArrayList<String> whereConds) throws IOException, ParseException {
+		String line = "";
+		String pkey = "";
+		String temptname = tableName + "_temp";
+		JSONParser parser = new JSONParser();
+		ArrayList<String> pkeys = new ArrayList<String>();
+
+		for (String cond : whereConds) {
+			String delims = "((?<=>|<|=)|(?=>|<|=))";
+			String[] currCond = cond.split(delims);
+			String columnName = currCond[0].trim();
+			String operator = currCond[1].trim();
+			String valueToSearch = currCond[2].trim();
+			if (valueToSearch.contains("'")) {
+				valueToSearch = valueToSearch.replace("'", "");
+			}
+
+			JSONArray content = null;
+//			JSONArray content2 = new JSONArray();
+			JSONObject obj;
+			boolean flag = false;
+			boolean operatorFlag = false;
+			int checkDataType = 0;
+
+			if (operator.equals("=") || operator.equals("<") || operator.equals(">")) {
+				operatorFlag = true;
+			} else {
+				System.out.println("Where operator invalid!");
+				return;
+			}
+
+			if (!tablename.contains(temptname)) {
+				System.out.println("Table does not exist!");
+			} else {
+				try {
+					BufferedReader bufferedReader = new BufferedReader(new FileReader(temptname + "_meta.txt"));
+					boolean columnNameFlag = false;
+					while ((line = bufferedReader.readLine()) != null) {
+						String s[] = line.split(" ");
+						if (s[0].equals(columnName)) {
+							columnNameFlag = true;
+							int temp = Integer.parseInt(s[1]);
+							if (temp == 1) {
+								flag = true;
+								checkDataType = 1;
+							} else if (temp == 2) {
+								flag = true;
+								checkDataType = 2;
+							}
+						}
+					}
+					bufferedReader.close();
+
+					if (columnNameFlag == false) {
+						System.out.println(
+								"The column name: " + columnName + " does not exist in given table: " + temptname);
+					} else {
+						try {
+							content = (JSONArray) parser.parse(new FileReader(temptname + ".json"));
+						} catch (ParseException e) {
+							System.out.println("ParseException in search method");
+							e.printStackTrace();
+						}
+						int len = content.size();
+						if (content != null && operatorFlag == true) {
+							if (flag == false) {
+
+								// handling for string data types
+								for (int i = 0; i < len; i++) {
+									obj = (JSONObject) content.get(i);
+									if (obj.get(columnName).toString().equals(valueToSearch)) {
+//										content2.add(obj);
+										if(!pkeys.contains(obj.get(temptname.replace("_temp", "")+"_pkey").toString())){
+											pkeys.add(obj.get(temptname.replace("_temp", "")+"_pkey").toString());
+										}
+									}
+								}
+							} else {
+								// handling for Integer
+								if (checkDataType == 1) {
+									try {
+										if (operator.equals("<")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) < Integer
+														.parseInt(valueToSearch)) {
+//													content2.add(obj);
+													if(!pkeys.contains(obj.get(temptname.replace("_temp", "")+"_pkey").toString())){
+														pkeys.add(obj.get(temptname.replace("_temp", "")+"_pkey").toString());
+													}
+												}
+											}
+										} else if (operator.equals(">")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) > Integer
+														.parseInt(valueToSearch)) {
+//													content2.add(obj);
+													if(!pkeys.contains(obj.get(temptname.replace("_temp", "")+"_pkey").toString())){
+														pkeys.add(obj.get(temptname.replace("_temp", "")+"_pkey").toString());
+													}
+												}
+											}
+										} else if (operator.equals("=")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) == Integer
+														.parseInt(valueToSearch)) {
+//													content2.add(obj);
+													if(!pkeys.contains(obj.get(temptname.replace("_temp", "")+"_pkey").toString())){
+														pkeys.add(obj.get(temptname.replace("_temp", "")+"_pkey").toString());
+													}
+												}
+											}
+										}
+									} catch (Exception e) {
+										// System.out.println("The value: " +
+										// valueToSearch + " does not exist in
+										// this table");
+									}
+
+								} else if (checkDataType == 2) {
+									try {
+										if (operator.equals("<")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) < Float
+														.parseFloat(valueToSearch)) {
+//													content2.add(obj);
+													if(!pkeys.contains(obj.get(temptname.replace("_temp", "")+"_pkey").toString())){
+														pkeys.add(obj.get(temptname.replace("_temp", "")+"_pkey").toString());
+													}
+												}
+											}
+										} else if (operator.equals(">")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) > Float
+														.parseFloat(valueToSearch)) {
+//													content2.add(obj);
+													if(!pkeys.contains(obj.get(temptname.replace("_temp", "")+"_pkey").toString())){
+														pkeys.add(obj.get(temptname.replace("_temp", "")+"_pkey").toString());
+													}
+												}
+											}
+										} else if (operator.equals("=")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) == Float
+														.parseFloat(valueToSearch)) {
+//													content2.add(obj);
+													if(!pkeys.contains(obj.get(temptname.replace("_temp", "")+"_pkey").toString())){
+														pkeys.add(obj.get(temptname.replace("_temp", "")+"_pkey").toString());
+													}
+												}
+											}
+										}
+									} catch (Exception e) {
+										// System.out.println("The value: " +
+										// valueToSearch + " does not exist in
+										// this table");
+									}
+								}
+							}
+//							FileWriter file = new FileWriter(temptname + ".json");
+//							file.write(content2.toJSONString());
+//							file.close();
+						} else {
+							System.out.println(
+									"Unable to perform search. Please enter table name, column name and operator values correctly");
+						}
+					}
+
+				} catch (FileNotFoundException e) {
+					System.out.println("Unable to read file tablekeymeta.txt in search method");
+					e.printStackTrace();
+				} catch (IOException io) {
+					System.out.println("IOException in search method");
+					io.printStackTrace();
+				}
+			}
+		}
+
+		// finding pkey
+//		boolean pkeyFlag = false;
+//		JSONObject obj2;
+//		ArrayList<String> pkeyList = new ArrayList<>();
+//		BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
+//		while ((line = br.readLine()) != null) {
+//			String s[] = line.split(" ");
+//			if (s[0].equals(tableName)) {
+//				pkey = s[1];
+//				pkeyFlag = true;
+//				break;
+//			}
+//		}
+//		br.close();
+
+		// calling delete row on the primary keys found
+//		if (pkeyFlag) {
+//			JSONArray content = (JSONArray) parser.parse(new FileReader(temptname + ".json"));
+//			int len = content.size();
+//			if (content != null) {
+//				for (int i = 0; i < len; i++) {
+//					obj2 = (JSONObject) content.get(i);
+//					pkeyList.add(obj2.get(pkey).toString());
+//				}
+//			}
+//		}
+		
+		for(String str:pkeys){
+			deleteRow(tableName, tableName+"_pkey", str);
 		}
 	}
 	
@@ -1205,7 +1439,7 @@ public class entryClass {
 		}
 	}
 	
-	public void searchForOrSQL(String tableName, ArrayList<String> whereConds) throws IOException {
+	public int searchForOrSQL(String tableName, ArrayList<String> whereConds) throws IOException {
 		String line;
 		String pkey = "";
 		JSONObject obj;
@@ -1245,10 +1479,12 @@ public class entryClass {
 				operatorFlag = true;
 			} else {
 				System.out.println("Where operator invalid!");
+				return -1;
 			}
 
 			if (!tablename.contains(tableName)) {
 				System.out.println("Table does not exist!");
+				return -1;
 			} else {
 				try {
 					BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
@@ -1272,13 +1508,15 @@ public class entryClass {
 
 					if (columnNameFlag == false) {
 						System.out.println(
-								"The column name: " + columnName + " does not exist in given table: " + tableName);
+								"The column name: " + columnName + " does not exist in given table: " + tableName.replace("_temp", ""));
+						return -1;
 					} else {
 						try {
 							content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
 						} catch (ParseException e) {
 							System.out.println("ParseException in search method");
-							e.printStackTrace();
+//							e.printStackTrace();
+							return -1;
 						}
 						int len = content.size();
 						if (content != null && operatorFlag == true) {
@@ -1329,6 +1567,7 @@ public class entryClass {
 										}
 									} catch (Exception e) {
 										 System.out.println("The value: " + valueToSearch + " does not exist in this table");
+										 return -1;
 									}
 
 								} else if (checkDataType == 2) {
@@ -1366,21 +1605,25 @@ public class entryClass {
 										}
 									} catch (Exception e) {
 										 System.out.println("The value: " + valueToSearch + " does not exist in this table");
+										 return -1;
 									}
 								}
 							}
 						} else {
 							System.out.println(
 									"Unable to perform search. Please enter table name, column name and operator values correctly");
+							return -1;
 						}
 					}
 
 				} catch (FileNotFoundException e) {
 					System.out.println("Unable to read file tablekeymeta.txt in search method");
-					e.printStackTrace();
+//					e.printStackTrace();
+					return -1;
 				} catch (IOException io) {
 					System.out.println("IOException in search method");
-					io.printStackTrace();
+//					io.printStackTrace();
+					return -1;
 				}
 			}
 		}
@@ -1390,7 +1633,8 @@ public class entryClass {
 			content2 = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
 		} catch (ParseException e) {
 			System.out.println("ParseException in search method");
-			e.printStackTrace();
+//			e.printStackTrace();
+			return -1;
 		}
 		int len = content2.size();
 		if (content2 != null) {
@@ -1404,13 +1648,18 @@ public class entryClass {
 		FileWriter file = new FileWriter(tableName + ".json");
 		file.write(content3.toJSONString());
 		file.close();
+		return 0;
 	}
 	
-	public void searchForSQL(String tableName, ArrayList<String> whereConds) {
+	public int searchForSQL(String tableName, ArrayList<String> whereConds) {
 		
 		for (String cond : whereConds) {
 			String delims = "((?<=>|<|=)|(?=>|<|=))";
 			String[] currCond = cond.split(delims);
+			if(currCond.length > 3){
+				System.out.println("Wrong condition in where clause!");
+				return -1;
+			}
 			String columnName = currCond[0].trim();
 			String operator = currCond[1].trim();
 			String valueToSearch = currCond[2].trim();
@@ -1436,6 +1685,7 @@ public class entryClass {
 
 			if (!tablename.contains(tableName)) {
 				System.out.println("Table does not exist!");
+				return -1;
 			} else {
 				try {
 					BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
@@ -1458,8 +1708,10 @@ public class entryClass {
 					bufferedReader.close();
 
 					if (columnNameFlag == false) {
+						tableName = tableName.replace("_temp", ""); 
 						System.out.println(
 								"The column name: " + columnName + " does not exist in given table: " + tableName);
+						return -1;
 					} else {
 						try {
 							content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
@@ -1549,18 +1801,22 @@ public class entryClass {
 						} else {
 							System.out.println(
 									"Unable to perform search. Please enter table name, column name and operator values correctly");
+							return -1;
 						}
 					}
 
 				} catch (FileNotFoundException e) {
 					System.out.println("Unable to read file tablekeymeta.txt in search method");
-					e.printStackTrace();
+//					e.printStackTrace();
+					return -1;
 				} catch (IOException io) {
 					System.out.println("IOException in search method");
-					io.printStackTrace();
+//					io.printStackTrace();
+					return -1;
 				}
 			}
 		}
+		return 0;
 	}
 
 	private static void searchFromTable() {
@@ -2050,152 +2306,144 @@ public class entryClass {
 		Object value = null;
 		JSONParser parser = new JSONParser();
 		JSONObject obj;
-		boolean flag = false, loop = false,loop2=false;
+		boolean flag = false, loop = false, loop2 = false;
 		long recid;
 		BTree tree = null;
-		int prim=0;
-		int location=Integer.MAX_VALUE;
-		
+		int prim = 0;
+		int location = Integer.MAX_VALUE;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't exist!");
 		} else {
-			
+
 			System.out.println("Enter Primary key Value: ");
-			loop2=true;
-			while(loop2){
-				try{
-			prim = sc.nextInt();
-			sc.nextLine();
-			loop2=false;
-				}
-				catch(InputMismatchException e)
-				{
+			loop2 = true;
+			while (loop2) {
+				try {
+					prim = sc.nextInt();
+					sc.nextLine();
+					loop2 = false;
+				} catch (InputMismatchException e) {
 					System.out.println("Invalid value!");
 					sc.nextLine();
 				}
 			}
-			//comented due to b+ tree
-//			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
-//			while ((name = br.readLine()) != null) {
-//				String s[] = name.split(" ");
-//				if (s[0].equals(tname)) {
-//					pkey = s[1];
-//					flag = true;
-//				}
-//			}
-//			br.close();
-			//addition due to b+ tree
-			pkey=tname+"_pkey";
+			// comented due to b+ tree
+			// BufferedReader br = new BufferedReader(new
+			// FileReader("tablekeymeta.txt"));
+			// while ((name = br.readLine()) != null) {
+			// String s[] = name.split(" ");
+			// if (s[0].equals(tname)) {
+			// pkey = s[1];
+			// flag = true;
+			// }
+			// }
+			// br.close();
+			// addition due to b+ tree
+			pkey = tname + "_pkey";
 			//
-			recid = recman.getNamedObject( tname+"_btree" );
-            if ( recid != 0 ) {
-                tree = BTree.load( recman, recid );
-                }
-            
-            Object loc =tree.find(prim);
-            if(loc!=null)
-            location=(int) tree.find(prim);
-           
+			recid = recman.getNamedObject(tname + "_btree");
+			if (recid != 0) {
+				tree = BTree.load(recman, recid);
+			}
+
+			Object loc = tree.find(prim);
+			if (loc != null)
+				location = (int) tree.find(prim);
+
 			JSONArray list = new JSONArray();
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
 			int len = content.size();
-			if (content != null && recid!=0 && location<len ) {
-//				for (int i = 0; i < len; i++) {
+			if (content != null && recid != 0 && location < len) {
+				// for (int i = 0; i < len; i++) {
 
-					obj = (JSONObject) content.get(location);
-					content.remove(location);
-//					if (obj.get(pkey).toString().equals(prim)) {
-						JSONObject newObj = new JSONObject();
-						newObj.put(pkey, prim);
-						BufferedReader brmeta = new BufferedReader(new FileReader(tname + "_meta.txt"));
-						while ((name = brmeta.readLine()) != null) {
-							String s[] = name.split(" ");
-							if (!s[0].equals(pkey)) {
-								System.out.println("Enter value for " + s[0]);
-								//
-								if (Integer.parseInt(s[1]) == 1) {
-									loop = true;
-									while (loop) {
-										try {
-											value = sc.nextInt();
-											sc.nextLine();
-											loop = false;
-										} catch (InputMismatchException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										}
-									}
+				obj = (JSONObject) content.get(location);
+				content.remove(location);
+				// if (obj.get(pkey).toString().equals(prim)) {
+				JSONObject newObj = new JSONObject();
+				newObj.put(pkey, prim);
+				BufferedReader brmeta = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				while ((name = brmeta.readLine()) != null) {
+					String s[] = name.split(" ");
+					if (!s[0].equals(pkey)) {
+						System.out.println("Enter value for " + s[0]);
+						//
+						if (Integer.parseInt(s[1]) == 1) {
+							loop = true;
+							while (loop) {
+								try {
+									value = sc.nextInt();
+									sc.nextLine();
+									loop = false;
+								} catch (InputMismatchException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
 								}
-								else if (Integer.parseInt(s[1]) == 2) {
-									loop = true;
-									while (loop) {
-										try {
-											value = sc.nextFloat();
-											sc.nextLine();
-											loop = false;
-										} catch (InputMismatchException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										}
-									}
-								}
-								else if (Integer.parseInt(s[1]) == 5) {
-									loop = true;
-									while (loop) {
-										try {
-											value = sc.nextBoolean();
-											sc.nextLine();
-											loop = false;
-										} catch (InputMismatchException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										}
-									}
-								}
-								else if (Integer.parseInt(s[1]) == 4) {
-									DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
-									loop = true;
-									Date date = null;
-									while (loop) {
-										try {
-											value = sc.next();
-											date = format.parse(value.toString());
-											sc.nextLine();
-											loop = false;
-										} catch (InputMismatchException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										} catch (java.text.ParseException e) {
-											System.out.println("Invalid value!");
-											sc.nextLine();
-										}
-									}
-								} 
-								else {
-									value = sc.nextLine();
-								}
-								//
-
-								// value=sc.next();
-								newObj.put(s[0], value);
-
 							}
-							obj = newObj;
-
+						} else if (Integer.parseInt(s[1]) == 2) {
+							loop = true;
+							while (loop) {
+								try {
+									value = sc.nextFloat();
+									sc.nextLine();
+									loop = false;
+								} catch (InputMismatchException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
+								}
+							}
+						} else if (Integer.parseInt(s[1]) == 5) {
+							loop = true;
+							while (loop) {
+								try {
+									value = sc.nextBoolean();
+									sc.nextLine();
+									loop = false;
+								} catch (InputMismatchException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
+								}
+							}
+						} else if (Integer.parseInt(s[1]) == 4) {
+							DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+							loop = true;
+							Date date = null;
+							while (loop) {
+								try {
+									value = sc.next();
+									date = format.parse(value.toString());
+									sc.nextLine();
+									loop = false;
+								} catch (InputMismatchException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
+								} catch (java.text.ParseException e) {
+									System.out.println("Invalid value!");
+									sc.nextLine();
+								}
+							}
+						} else {
+							value = sc.nextLine();
 						}
-						brmeta.close();
-						
+						//
 
-					//}
-					content.add(location, obj);
-					FileWriter file = new FileWriter(tname + ".json");
-					file.write("");
-					file.write(content.toJSONString());
-					file.close();
-					
-				//}
+						// value=sc.next();
+						newObj.put(s[0], value);
 
+					}
+					obj = newObj;
+
+				}
+				brmeta.close();
+
+				// }
+				content.add(location, obj);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+
+				// }
 			}
 		}
 	}
@@ -2206,87 +2454,87 @@ public class entryClass {
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
 		sc.nextLine();
-		String name;
-		String pkey = "";
+		// String name;
+		// String pkey = "";
 		JSONParser parser = new JSONParser();
-		JSONObject obj;
-		boolean flag = false;
+		// JSONObject obj;
+		// boolean flag = false;
 		long recid;
-		BTree tree=null;
-		int location=Integer.MAX_VALUE;
+		BTree tree = null;
+		int location = Integer.MAX_VALUE;
 		Tuple tuple = new Tuple();
-        TupleBrowser browser;
-        boolean loop2=false;
-        int prim=Integer.MAX_VALUE;
+		TupleBrowser browser;
+		boolean loop2 = false;
+		int prim = Integer.MAX_VALUE;
 
 		if (!tablename.contains(tname)) {
 			System.out.println("Table doesn't exist!");
 		} else {
 			System.out.println("Enter Primary key Value: ");
-			loop2=true;
-			while(loop2){
-				try{
+			loop2 = true;
+			while (loop2) {
+				try {
 					prim = sc.nextInt();
 					sc.nextLine();
-					loop2=false;
-				}
-				catch(InputMismatchException e)
-				{
+					loop2 = false;
+				} catch (InputMismatchException e) {
 					System.out.println("Invalid value!");
 					sc.nextLine();
 				}
 			}
-			BufferedReader br = new BufferedReader(new FileReader("tablekeymeta.txt"));
-//			while ((name = br.readLine()) != null) {
-//				String s[] = name.split(" ");
-//				if (s[0].equals(tname)) {
-//					pkey = s[1];
-//					flag = true;
-//				}
-//			}
-			br.close();
-			pkey=tname+"_pkey";
-			recid = recman.getNamedObject( tname+"_btree" );
-            if ( recid != 0 ) 
-                tree = BTree.load( recman, recid );
-            
-            Object loc =tree.find(prim);
-            if(loc!=null)
-            location=(int) tree.find(prim);
-			
-			if(recid!=0){
-			JSONArray list = new JSONArray();
-			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
-			int len = content.size();
-			if (content != null && location<len) {
-//				for (int i = 0; i < len; i++) {
-//					obj = (JSONObject) content.get(location);
-//					if (!obj.get(pkey).toString().equals(prim)) {
-//						list.add(obj);
-//					}
-				//}
-				content.remove(location);
-			
-			FileWriter file = new FileWriter(tname + ".json");
-			file.write("");
-			file.write(content.toJSONString());
-			file.close();
-			
-			//experimental
-			 browser=tree.browse();
-             while ( browser.getNext( tuple ) ) {
-             	//System.out.println( tuple.getKey()+" "+tuple.getValue());
-             if((int)tuple.getKey()>prim){
-            	 tree.insert(tuple.getKey(), (int)tuple.getValue()-1, true);
-             }	
-             }
-             tree.remove(prim);
-             recman.commit();
-			//
-			
-			System.out.println("\n1 record deleted.");
-			}
-			}else{
+			// BufferedReader br = new BufferedReader(new
+			// FileReader("tablekeymeta.txt"));
+			// while ((name = br.readLine()) != null) {
+			// String s[] = name.split(" ");
+			// if (s[0].equals(tname)) {
+			// pkey = s[1];
+			// flag = true;
+			// }
+			// }
+			// br.close();
+			// pkey=tname+"_pkey";
+			recid = recman.getNamedObject(tname + "_btree");
+			if (recid != 0)
+				tree = BTree.load(recman, recid);
+
+			Object loc = tree.find(prim);
+			if (loc != null)
+				location = (int) tree.find(prim);
+
+			if (recid != 0) {
+				// JSONArray list = new JSONArray();
+				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+				int len = content.size();
+				if (content != null && location < len) {
+					// for (int i = 0; i < len; i++) {
+					// obj = (JSONObject) content.get(location);
+					// if (!obj.get(pkey).toString().equals(prim)) {
+					// list.add(obj);
+					// }
+					// }
+					content.remove(location);
+
+					FileWriter file = new FileWriter(tname + ".json");
+					file.write("");
+					file.write(content.toJSONString());
+					file.close();
+
+					// experimental
+					browser = tree.browse();
+					while (browser.getNext(tuple)) {
+						// System.out.println( tuple.getKey()+"
+						// "+tuple.getValue());
+						if ((int) tuple.getKey() > prim) {
+							tree.insert(tuple.getKey(), (int) tuple.getValue() - 1, true);
+						}
+					}
+					tree.remove(prim);
+					recman.commit();
+					//
+
+					System.out.println("\n1 record deleted.");
+				}
+			} else {
 				System.out.println("\nPrimary key not found. Returning to main menu.");
 			}
 		}
@@ -2413,7 +2661,6 @@ public class entryClass {
 			writerunique.write(uniquekey.toString());
 			writerunique.close();
 
-			//
 			// writing to b tree
 			recid = recman.getNamedObject(tname + "_btree");
 			if (recid != 0) {
