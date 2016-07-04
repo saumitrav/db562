@@ -1,3 +1,0 @@
-test1_pkey 1
-id1 1
-name 3
