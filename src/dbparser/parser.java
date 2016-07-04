@@ -305,7 +305,7 @@ public class parser {
 					System.out.println("Value to search on the primary key is not integer!");
 					return;
 				}
-				entry.searchOnPrimKey(tname+"_temp", operator, Integer.parseInt(valueToSearch));
+				entry.searchOnPrimKey(tname, operator, Integer.parseInt(valueToSearch));
 				condList.remove(cond);
 			}
 			if (andFlag) {

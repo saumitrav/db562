@@ -362,6 +362,9 @@ public class entryClass {
 						file.write("");
 						file.write(list.toJSONString());
 						file.close();
+					}else{
+						System.out.println("Btree doesn't exist.");
+						return;
 					}
 				}
 			} else {
@@ -2758,6 +2761,16 @@ public class entryClass {
 			} else {
 				System.out.println("Adding index failed");
 			}
+			//
+            //adding index on columns
+            br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+			br.readLine();
+			
+			while ((name = br.readLine()) != null) {
+				String s[] = name.split(" ");
+				insertToColBTree(tname,s[0],newObj.get(s[0]).toString(),content.size()-1);
+			}
+            //
 		}
 	}
 
