@@ -126,9 +126,9 @@ public class parser {
 
 		// finding the tables
 		if (tables.contains(",")) {
-			String[] tablestemp = tables.split("//s*,//s*");
+			String[] tablestemp = tables.split(",");
 			for (String str : tablestemp) {
-				if (!str.isEmpty() && !str.equals("")) {
+				if (!str.trim().isEmpty() && !str.trim().equals("")) {
 					tableList.add(str.trim());
 					joinFlag = true;
 				}
@@ -181,7 +181,36 @@ public class parser {
 		}
 		
 		if(joinFlag){
-			//TODO handle wrong conditions when keys are not present and join tables
+			//TODO handle wrong conditions when keys are not present
+			if(tableList.size()>2){
+				System.out.println("More than 2 tables. Cannot join. Returning to main menu!");
+				return;
+			}else{
+				String cond = "";
+				boolean flag = false;
+				for(String str:condList){
+					String[] currCond = str.split("((?<==)|(?==))");
+					String pkey1 = currCond[0].trim();
+					String operator = currCond[1].trim();
+					String pkey2 = currCond[2].trim();
+					if (tableList.contains(pkey1.replace("_pkey", ""))) {
+						if (tableList.contains(pkey2.replace("_pkey", ""))) {
+							if (operator.equals("=")) {
+								flag = true;
+								cond = str;
+								break;
+							}
+						}
+					}
+				}
+				condList.remove(cond);
+				if(!flag){
+					System.out.println("Wrong join condition!");
+					return;
+				}
+				entry.joinOnPkey(tableList.get(0), tableList.get(1));
+				tname = tableList.get(0) + "_" + tableList.get(1);
+			}
 		}else{
 			tname = tableList.get(0);
 			//creating a temp file to perform operations on
@@ -212,7 +241,7 @@ public class parser {
 				} catch (Exception e) {
 					System.out.println("Primary key attribute not an integer!");
 				}
-				entry.searchOnPrimKey(tname, operator, Integer.parseInt(valueToSearch));
+				entry.searchOnPrimKey(tname+"_temp", operator, Integer.parseInt(valueToSearch));
 			}
 			if (andFlag) {
 				entry.searchForSQL(tname+"_temp", condList);

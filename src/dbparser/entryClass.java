@@ -78,8 +78,8 @@ public class entryClass {
 		recman = RecordManagerFactory.createRecordManager(DATABASE, props );
 		menu();
 
-		searchOnPrimKey("test1", "<", 2);
-		joinOnPkey("test1","test2");
+//		searchOnPrimKey("test1", "<", 2);
+//		joinOnPkey("test1","test2");
 
 		/// load all changes to file again
 		FileWriter writer = new FileWriter("tableList.txt");
@@ -109,108 +109,92 @@ public class entryClass {
 
 	}
 
-	private static void createJoinTable(String tname1, String tname2) throws IOException
-	{
+	private static void createJoinTable(String tname1, String tname2) throws IOException {
 		String name;
-		String tablenew=tname1+"_"+tname2;
-		File file = new File(tname1+"_"+tname2+".json");
+		String tablenew = tname1 + "_" + tname2 + "_temp";
+		File file = new File(tname1 + "_" + tname2 + "_temp.json");
 		if (file.exists())
 			file.delete();
 		file.createNewFile();
-		file = new File(tname1+"_"+tname2+"_meta.txt");
+		file = new File(tname1 + "_" + tname2 + "_temp_meta.txt");
 		if (file.exists())
 			file.delete();
 		file.createNewFile();
-		BufferedReader br = new BufferedReader(new FileReader(tname1+"_meta.txt"));
-		BufferedWriter brw = new BufferedWriter(new FileWriter(tname1+"_"+tname2+"_meta.txt"));
-		while ((name = br.readLine()) != null){
+		BufferedReader br = new BufferedReader(new FileReader(tname1 + "_meta.txt"));
+		BufferedWriter brw = new BufferedWriter(new FileWriter(tname1 + "_" + tname2 + "_temp_meta.txt"));
+		while ((name = br.readLine()) != null) {
 			brw.write(name);
 			brw.newLine();
-			
+
 		}
-		br = new BufferedReader(new FileReader(tname2+"_meta.txt"));
-		while ((name = br.readLine()) != null)
-			{
+		br = new BufferedReader(new FileReader(tname2 + "_meta.txt"));
+		while ((name = br.readLine()) != null) {
 			brw.write(name);
 			brw.newLine();
-			}
-		
+		}
+
 		brw.close();
-		if(!tablename.contains(tablenew))
+		if (!tablename.contains(tablenew))
 			tablename.add(tablenew);
-		tablekey.put(tablenew, tname1+"_pkey");
+		tablekey.put(tablenew, tname1 + "_pkey");
 		writetoTableList();
 		writetoKeyMeta();
-		
-		
-		
-		
-		
-		
+
 	}
 	
-	private static void joinOnPkey(String tname1, String tname2) throws FileNotFoundException, IOException, ParseException {
-		
+	public void joinOnPkey(String tname1, String tname2)
+			throws FileNotFoundException, IOException, ParseException {
+
 		JSONParser parser = new JSONParser();
 		long recid1;
 		long recid2;
-		BTree tree1=null;
+		BTree tree1 = null;
 		Tuple tuple1 = new Tuple();
-        TupleBrowser browser1;
-        BTree tree2=null;
+		TupleBrowser browser1;
+		BTree tree2 = null;
 		Tuple tuple2 = new Tuple();
-        TupleBrowser browser2;
-        JSONArray list=new JSONArray();
-        int location=Integer.MAX_VALUE;
-        Object obj;
+		TupleBrowser browser2;
+		JSONArray list = new JSONArray();
+		int location = Integer.MAX_VALUE;
+		Object obj;
 
-		if(!(tablename.contains(tname1) && tablename.contains(tname1)) ){
-			//System.out.println("Table doesn't Exist");
-		}
-		else{
-			
+		if (!(tablename.contains(tname1) && tablename.contains(tname2))) {
+			 System.out.println("Table doesn't Exist");
+		} else {
 			JSONArray content1 = (JSONArray) parser.parse(new FileReader(tname1 + ".json"));
 			JSONArray content2 = (JSONArray) parser.parse(new FileReader(tname2 + ".json"));
-			
-			recid1 = recman.getNamedObject( tname1+"_btree" );
-            if ( recid1 != 0 ) {
-                tree1 = BTree.load( recman, recid1 );
-            }
-            
 
-			recid2 = recman.getNamedObject( tname2+"_btree" );
-            if ( recid2 != 0 ) {
-                tree2 = BTree.load( recman, recid2 );
-            }
-            
-            if(tree1!=null && tree2!=null)
-            {
-            	browser1 = tree1.browse();
-            	createJoinTable(tname1, tname2);
-            	while ( browser1.getNext( tuple1 ) ) {
-                    location=(int)tuple1.getKey();
-                    obj= tree2.find(location);
-                    if(obj!=null){
-                    	
-                    	JSONObject object2=(JSONObject) content2.get((int)obj);
-                    	JSONObject object1=(JSONObject) content1.get((int)tuple1.getValue());
-                    	JSONObject combined = new JSONObject();
-                    	combined.putAll(object1);
-                    	combined.putAll(object2);
-                    	list.add(combined);
-                    	
-                    }
-                    }
-            	FileWriter file = new FileWriter(tname1+"_"+tname2+ ".json");
-    			file.write("");
-    			file.write(list.toJSONString());
-    			file.close();
-            }
-			
-			
+			recid1 = recman.getNamedObject(tname1 + "_btree");
+			if (recid1 != 0) {
+				tree1 = BTree.load(recman, recid1);
+			}
+
+			recid2 = recman.getNamedObject(tname2 + "_btree");
+			if (recid2 != 0) {
+				tree2 = BTree.load(recman, recid2);
+			}
+
+			if (tree1 != null && tree2 != null) {
+				browser1 = tree1.browse();
+				createJoinTable(tname1, tname2);
+				while (browser1.getNext(tuple1)) {
+					location = (int) tuple1.getKey();
+					obj = tree2.find(location);
+					if (obj != null) {
+						JSONObject object2 = (JSONObject) content2.get((int) obj);
+						JSONObject object1 = (JSONObject) content1.get((int) tuple1.getValue());
+						JSONObject combined = new JSONObject();
+						combined.putAll(object1);
+						combined.putAll(object2);
+						list.add(combined);
+					}
+				}
+				FileWriter file = new FileWriter(tname1 + "_" + tname2 + "_temp.json");
+				file.write("");
+				file.write(list.toJSONString());
+				file.close();
+			}
 		}
-
-		
 	}
 	
 	public static void searchOnPrimKey(String tname, String opr, int value) throws IOException, ParseException
