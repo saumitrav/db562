@@ -296,7 +296,6 @@ public class parser {
 				}
 			}
 			if (pkeyFlag) {
-				condList.remove(cond);
 				String[] currCond = cond.split("((?<=>|<|=)|(?=>|<|=))");
 				String operator = currCond[1].trim();
 				String valueToSearch = currCond[2].trim();
@@ -307,6 +306,7 @@ public class parser {
 					return;
 				}
 				entry.searchOnPrimKey(tname+"_temp", operator, Integer.parseInt(valueToSearch));
+				condList.remove(cond);
 			}
 			if (andFlag) {
 				int ret = entry.searchForSQL(tname+"_temp", condList);

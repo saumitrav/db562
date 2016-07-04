@@ -199,114 +199,92 @@ public class entryClass {
 		}
 	}
 	
-	public static void searchOnPrimKey(String tname, String opr, int value) throws IOException, ParseException
-	{
+	public static void searchOnPrimKey(String tname, String opr, int value) throws IOException, ParseException {
 		long recid;
-		BTree tree=null;
+		BTree tree = null;
 		Tuple tuple = new Tuple();
-        TupleBrowser browser;
-        Object obj=null;
-        JSONParser parser = new JSONParser();
-        int location=Integer.MAX_VALUE;
-		if(!tablename.contains(tname)){
-			//System.out.println("Table doesn't Exist");
-		}
-		
-		else{
+		TupleBrowser browser;
+		Object obj = null;
+		JSONParser parser = new JSONParser();
+		int location = Integer.MAX_VALUE;
+		if (!tablename.contains(tname)) {
+			// System.out.println("Table doesn't Exist");
+		} else {
 			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
-			JSONArray list=new JSONArray();
+			JSONArray list = new JSONArray();
 			JSONObject object;
-			if(opr.equals("<") || opr.equals(">") || opr.equals("=") )
-			{
-				if(opr.equals("=")){
-					recid = recman.getNamedObject( tname+"_btree" );
-		            if ( recid != 0 ) {
-		                tree = BTree.load( recman, recid );
-		            }
-		            if(tree!=null)
-		            {
-		            	obj=tree.find(value);
-		            	if(obj!=null)
-		            		location=(int)obj;
-		            	else{
-//		            		createTempTable(tname, tname+"_temp");
-		            		FileWriter file = new FileWriter(tname + "_temp.json");
-		        			file.write("");
-		        			file.write(list.toJSONString());
-		        			file.close();
-		            		
-		            	}
-		            	if(location<content.size())
-		            	{
-		            		object=(JSONObject) content.get(location);
-//		            		createTempTable(tname, tname+"_temp");
-		            		list.add(object);
-		            		FileWriter file = new FileWriter(tname + "_temp.json");
-		        			file.write("");
-		        			file.write(list.toJSONString());
-		        			file.close();
-		            	}
-		            }
+			if (opr.equals("<") || opr.equals(">") || opr.equals("=")) {
+				if (opr.equals("=")) {
+					recid = recman.getNamedObject(tname + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						obj = tree.find(value);
+						if (obj != null)
+							location = (int) obj;
+						else {
+							// createTempTable(tname, tname+"_temp");
+							FileWriter file = new FileWriter(tname + "_temp.json");
+							file.write("");
+							file.write(list.toJSONString());
+							file.close();
+						}
+						if (location < content.size()) {
+							object = (JSONObject) content.get(location);
+							// createTempTable(tname, tname+"_temp");
+							list.add(object);
+							FileWriter file = new FileWriter(tname + "_temp.json");
+							file.write("");
+							file.write(list.toJSONString());
+							file.close();
+						}
+					}
+				} else if (opr.equals(">")) {
+					recid = recman.getNamedObject(tname + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						browser = tree.browse(value);
+						// createTempTable(tname, tname+"_temp");
+						while (browser.getNext(tuple)) {
+							location = (int) tuple.getValue();
+							int tempkey = (int) tuple.getKey();
+							if (location < content.size() && tempkey > value) {
+								object = (JSONObject) content.get(location);
+								list.add(object);
+							}
+						}
+						FileWriter file = new FileWriter(tname + "_temp.json");
+						file.write("");
+						file.write(list.toJSONString());
+						file.close();
+					}
+				} else if (opr.equals("<")) {
+					recid = recman.getNamedObject(tname + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						browser = tree.browse(value);
+						// createTempTable(tname, tname+"_temp");
+						while (browser.getPrevious(tuple)) {
+							location = (int) tuple.getValue();
+							int tempkey = (int) tuple.getKey();
+							if (location < content.size() && tempkey < value) {
+								object = (JSONObject) content.get(location);
+								list.add(object);
+							}
+						}
+						FileWriter file = new FileWriter(tname + "_temp.json");
+						file.write("");
+						file.write(list.toJSONString());
+						file.close();
+					}
 				}
-				else if(opr.equals(">"))
-				{
-					recid = recman.getNamedObject( tname+"_btree" );
-		            if ( recid != 0 ) {
-		                tree = BTree.load( recman, recid );
-		            }
-		            if(tree!=null)
-		            {
-		            	browser = tree.browse(value);
-//		            	createTempTable(tname, tname+"_temp");
-		            	while ( browser.getNext( tuple ) ) {
-		                    location=(int)tuple.getValue();
-		                
-		            	int tempkey=(int)tuple.getKey();
-		            	if(location<content.size() && tempkey>value)
-		            	{
-		            		object=(JSONObject) content.get(location);
-		            		list.add(object);
-		            		
-		            	}
-		            	
-		            	}
-		            	FileWriter file = new FileWriter(tname + "_temp.json");
-	        			file.write("");
-	        			file.write(list.toJSONString());
-	        			file.close();
-		            }
-				}
-				else if(opr.equals("<"))
-				{
-					recid = recman.getNamedObject( tname+"_btree" );
-		            if ( recid != 0 ) {
-		                tree = BTree.load( recman, recid );
-		            }
-		            if(tree!=null)
-		            {
-		            	browser = tree.browse(value);
-//		            	createTempTable(tname, tname+"_temp");
-		            	while ( browser.getPrevious( tuple ) ) {
-		                    location=(int)tuple.getValue();
-		                
-		            	int tempkey=(int)tuple.getKey();
-		            	if(location<content.size() && tempkey<value)
-		            	{
-		            		object=(JSONObject) content.get(location);
-		            		list.add(object);
-		            		
-		            	}
-		            	
-		            	}
-		            	FileWriter file = new FileWriter(tname + "_temp.json");
-	        			file.write("");
-	        			file.write(list.toJSONString());
-	        			file.close();
-		            }
-				}
-			}
-			else{
-				//System.out.println("invalid operation");
+			} else {
+				// System.out.println("invalid operation");
 			}
 		}
 	}
