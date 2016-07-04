@@ -55,12 +55,19 @@ public class parser {
 		if (inSQL.toLowerCase().contains("select")) {
 			String delimSel = "select\\s*|SELECT\\s*";
 			String[] withoutSel = inSQL.split(delimSel);
-
+			if(withoutSel.length<2){
+				System.out.println("Wrong SQL!");
+				return;
+			}
 			if (!withoutSel[1].equals(null) && withoutSel[1].toLowerCase().contains("from")) {
 				String delimFrom = "\\s*from\\s*|\\s*FROM\\s*";
 				String[] withoutFrom = withoutSel[1].split(delimFrom);
+				if(withoutFrom.length<2){
+					System.out.println("Wrong SQL!");
+					return;
+				}
 				attributes = withoutFrom[0];
-
+				
 				if (inSQL.toLowerCase().contains(" where ")) {
 					whereFlag = true;
 				}
@@ -71,11 +78,19 @@ public class parser {
 				if (whereFlag) {
 					String delimWhere = "\\s*where\\s*|\\s*WHERE\\s*";
 					String[] withoutWhere = withoutFrom[1].split(delimWhere);
+					if(withoutWhere.length<2){
+						System.out.println("Wrong SQL!");
+						return;
+					}
 					tables = withoutWhere[0];
 
 					if (orderFlag) {
 						String delimOrder = "\\s*order by\\s*|\\s*ORDER BY\\s*";
 						String[] withoutOrder = withoutWhere[1].split(delimOrder);
+						if(withoutOrder.length<2){
+							System.out.println("Wrong SQL!");
+							return;
+						}
 						whereCond = withoutOrder[0];
 
 						String delimSem = "\\s*;\\s*";
@@ -90,6 +105,10 @@ public class parser {
 					if (orderFlag) {
 						String delimOrder = "\\s*order by\\s*|\\s*ORDER BY\\s*";
 						String[] withoutOrder = withoutFrom[1].split(delimOrder);
+						if(withoutOrder.length<2){
+							System.out.println("Wrong SQL!");
+							return;
+						}
 						tables = withoutOrder[0];
 
 						String delimSem = "\\s*;\\s*";
@@ -106,10 +125,6 @@ public class parser {
 						}
 					}
 				}
-
-				if (inSQL.toLowerCase().contains("order by") && !whereFlag) {
-
-				}
 			} else {
 				System.out.println("Wrong SQL!");
 				return;
@@ -122,13 +137,25 @@ public class parser {
 		// finding the attributes
 		if (attributes.contains(",")) {
 			String[] attributestemp = attributes.split(",");
+			if(attributestemp.length<2){
+				System.out.println("Wrong SQL!");
+				return;
+			}
 			for (String str : attributestemp) {
-				if (!str.isEmpty() && !str.equals(" ")) {
+				if (!str.isEmpty() && !str.trim().equals("")) {
 					attributeList.add(str.trim());
 				}
 			}
+			if(attributeList.size()<2){
+				System.out.println("Wrong SQL!");
+				return;
+			}
 		} else {
 			attributeList.add(attributes.trim());
+		}
+		if(attributeList.isEmpty()){
+			System.out.println("Wrong SQL! Wrong attributes!");
+			return;
 		}
 
 		// finding the tables
@@ -140,9 +167,17 @@ public class parser {
 					joinFlag = true;
 				}
 			}
+			if(tableList.size()<2){
+				System.out.println("Wrong SQL!");
+				return;
+			}
 		} else {
 			if(tables.trim().equals("")){
 				System.out.println("No tables specified in the SQL!");
+				return;
+			}
+			if(tables.trim().contains(" ")){
+				System.out.println("Tables not comma sepatared!");
 				return;
 			}
 			tableList.add(tables.trim());
@@ -152,10 +187,18 @@ public class parser {
 		if (whereFlag) {
 			if (whereCond.toLowerCase().contains(" and ") || whereCond.toLowerCase().contains(" or ")) {
 				String[] where = whereCond.split(" and | AND | or | OR ");
+				if(where.length<2){
+					System.out.println("Something wrong in the where clause!");
+					return;
+				}
 				for (String str : where) {
 					if (!str.trim().isEmpty() && !str.trim().equals(" ")) {
 						condList.add(str.trim());
 					}
+				}
+				if(condList.size()<2){
+					System.out.println("Something wrong in the where clause!");
+					return;
 				}
 				if (whereCond.toLowerCase().contains(" and ")) {
 					andFlag = true;
@@ -163,6 +206,10 @@ public class parser {
 					orFlag = true;
 				}
 			} else {
+				if(whereCond.trim().equals("")){
+					System.out.println("Where condition absent!");
+					return;
+				}
 				condList.add(whereCond.trim());
 				andFlag = true;
 			}
@@ -180,12 +227,20 @@ public class parser {
 					orderBy = orderBy.trim();
 				}
 			}
+			if(orderBy.equals("")){
+				System.out.println("Order by attribute not supplied!");
+				return;
+			}
 		}
 
 		entryClass entry = new entryClass();
 		
 		for(String str:tableList){
 			if(!entry.tablename.contains(str)){
+				if(str.contains(" ")){
+					System.out.println("Wrong SQL!");
+					return;
+				}
 				System.out.println("Table "+str+" does not exist! Wrong SQL!");
 				return;
 			}
@@ -241,7 +296,6 @@ public class parser {
 				}
 			}
 			if (pkeyFlag) {
-				condList.remove(cond);
 				String[] currCond = cond.split("((?<=>|<|=)|(?=>|<|=))");
 				String operator = currCond[1].trim();
 				String valueToSearch = currCond[2].trim();
@@ -251,7 +305,8 @@ public class parser {
 					System.out.println("Value to search on the primary key is not integer!");
 					return;
 				}
-				entry.searchOnPrimKey(tname+"_temp", operator, Integer.parseInt(valueToSearch));
+				entry.searchOnPrimKey(tname, operator, Integer.parseInt(valueToSearch));
+				condList.remove(cond);
 			}
 			if (andFlag) {
 				int ret = entry.searchForSQL(tname+"_temp", condList);
@@ -290,36 +345,40 @@ public class parser {
 
 		String delimIns = "insert into\\s*|INSERT INTO\\s*";
 		String[] withoutIns = inSQL.split(delimIns);
+		if(withoutIns.length<2){
+			System.out.println("Wrong insert SQL!");
+			return;
+		}
 
-		if (!withoutIns[1].equals(null) && withoutIns[1].toLowerCase().contains("values")) {
-			String delimBrac = "\\(";
-			String[] withoutBrac = withoutIns[1].split(delimBrac,2);
-			table = withoutBrac[0].trim();
+		if (!withoutIns[1].trim().equals("") && withoutIns[1].toLowerCase().contains("values")) {
+			try {
+				String delimBrac = "\\(";
+				String[] withoutBrac = withoutIns[1].split(delimBrac, 2);
+				table = withoutBrac[0].trim();
 
-			String delimBrac2 = "\\)\\s+values\\s+|\\)\\s+VALUES\\s+";
-			String[] withoutBrac2 = withoutBrac[1].split(delimBrac2);
-			attributes = withoutBrac2[0].trim();
+				String delimBrac2 = "\\)\\s+values\\s+|\\)\\s+VALUES\\s+";
+				String[] withoutBrac2 = withoutBrac[1].split(delimBrac2);
+				attributes = withoutBrac2[0].trim();
 
-			String[] valWithoutBrac = withoutBrac2[1].split("\\(");
-			String[] valWithoutBrac2 = valWithoutBrac[1].split("\\);");
-			values = valWithoutBrac2[0].trim();
-
+				String[] valWithoutBrac = withoutBrac2[1].split("\\(");
+				String[] valWithoutBrac2 = valWithoutBrac[1].split("\\);");
+				values = valWithoutBrac2[0].trim();
+			} catch (Exception e) {
+				System.out.println("Wrong insert SQL!");
+				return;
+			}
 		} else {
-			System.out.println("Wrong SQL!");
+			System.out.println("Wrong insert SQL!");
 			return;
 		}
 
 		// finding the attributes
 		if (attributes.contains(",")) {
-			if (!attributes.contains("'")) {
-				String[] attributestemp = attributes.split(",");
-				for (String str : attributestemp) {
-					if (!str.isEmpty() && !str.equals(" ")) {
-						attributeList.add(str.trim());
-					}
+			String[] attributestemp = attributes.split(",");
+			for (String str : attributestemp) {
+				if (!str.isEmpty() && !str.equals(" ")) {
+					attributeList.add(str.trim());
 				}
-			}else{
-				//TODO write regex for parsing!? this is for the next step, not this one
 			}
 		} else {
 			attributeList.add(attributes.trim());
@@ -327,10 +386,20 @@ public class parser {
 		
 		// finding the values
 		if (values.contains(",")) {
-			String[] valuestemp = values.split(",");
-			for (String str : valuestemp) {
-				if (!str.isEmpty() && !str.equals(" ")) {
-					valueList.add(str.trim());
+			if (!values.contains("'")) {
+				String[] valuestemp = values.split(",");
+				for (String str : valuestemp) {
+					if (!str.isEmpty() && !str.trim().equals("")) {
+						valueList.add(str.trim());
+					}
+				}
+			} else {
+				values=values.replace("'", "");
+				String[] valuestemp = values.split(",");
+				for (String str : valuestemp) {
+					if (!str.isEmpty() && !str.trim().equals("")) {
+						valueList.add(str.trim());
+					}
 				}
 			}
 		} else {
@@ -359,52 +428,61 @@ public class parser {
 
 		String delimUpd = "update\\s+|UPDATE\\s+";
 		String[] withoutUpd = inSQL.split(delimUpd);
+		if(withoutUpd.length<2){
+			System.out.println("Wrong update SQL!");
+			return;
+		}
 
 		if (!withoutUpd[1].equals(null) && withoutUpd[1].toLowerCase().contains(" set ")) {
-			String delimSet = " set | SET ";
-			String[] withoutSet = withoutUpd[1].split(delimSet);
-			table = withoutSet[0].trim();
+			try {
+				String delimSet = " set | SET ";
+				String[] withoutSet = withoutUpd[1].split(delimSet);
+				table = withoutSet[0].trim();
 
-			if (!withoutSet[1].toLowerCase().contains(" where ")) {
-				setVals = withoutSet[1].replace(";", "").trim();
-			} else {
-				whereFlag = true;
-				String[] withoutWhere = withoutSet[1].split(" where | WHERE ");
-				whereCond = withoutWhere[1].replace(";", "").trim();
-				setVals = withoutWhere[0];
-			}
-
-			String[] setConds = setVals.split(",");
-			for (String str : setConds) {
-				if(str.contains(table+"_pkey")){
-					System.out.println("Tried to update primary. Kindly never try this again.");
-					return;
-				}
-				if (!str.trim().isEmpty() && !str.trim().equals("")) {
-					setList.add(str.trim());
-				}
-			}
-
-			if (whereFlag) {
-				if (whereCond.toLowerCase().contains(" and ") || whereCond.toLowerCase().contains(" or ")) {
-					String[] where = whereCond.split(" and | AND | or | OR ");
-					for (String str : where) {
-						if (!str.trim().isEmpty() && !str.trim().equals("")) {
-							condList.add(str.trim());
-						}
-					}
-					if (whereCond.toLowerCase().contains(" and ")) {
-						andFlag = true;
-					} else {
-						orFlag = true;
-					}
+				if (!withoutSet[1].toLowerCase().contains(" where ")) {
+					setVals = withoutSet[1].replace(";", "").trim();
 				} else {
-					condList.add(whereCond.trim());
-					andFlag = true;
+					whereFlag = true;
+					String[] withoutWhere = withoutSet[1].split(" where | WHERE ");
+					whereCond = withoutWhere[1].replace(";", "").trim();
+					setVals = withoutWhere[0];
 				}
+
+				String[] setConds = setVals.split(",");
+				for (String str : setConds) {
+					if (str.contains(table + "_pkey")) {
+						System.out.println("Tried to update primary. Kindly never try this again.");
+						return;
+					}
+					if (!str.trim().isEmpty() && !str.trim().equals("")) {
+						setList.add(str.trim());
+					}
+				}
+
+				if (whereFlag) {
+					if (whereCond.toLowerCase().contains(" and ") || whereCond.toLowerCase().contains(" or ")) {
+						String[] where = whereCond.split(" and | AND | or | OR ");
+						for (String str : where) {
+							if (!str.trim().isEmpty() && !str.trim().equals("")) {
+								condList.add(str.trim());
+							}
+						}
+						if (whereCond.toLowerCase().contains(" and ")) {
+							andFlag = true;
+						} else {
+							orFlag = true;
+						}
+					} else {
+						condList.add(whereCond.trim());
+						andFlag = true;
+					}
+				}
+			} catch (Exception e) {
+				System.out.println("Wrong update SQL!");
+				return;
 			}
 		} else {
-			System.out.println("Wrong SQL!");
+			System.out.println("Wrong update SQL!");
 			return;
 		}
 		
@@ -451,33 +529,41 @@ public class parser {
 
 		String delimDel = "delete from\\s+|DELETE FROM\\s+";
 		String[] withoutDel = inSQL.split(delimDel);
+		if(withoutDel.length<2){
+			System.out.println("Wrong delete SQL!");
+			return;
+		}
 
 		if (!withoutDel[1].equals(null) && withoutDel[1].toLowerCase().contains(" where ")) {
-			String delimWhere = " where | WHERE ";
-			String[] withoutWhere = withoutDel[1].split(delimWhere);
-			table = withoutWhere[0].trim();
+			try {
+				String delimWhere = " where | WHERE ";
+				String[] withoutWhere = withoutDel[1].split(delimWhere);
+				table = withoutWhere[0].trim();
 
-			whereCond = withoutWhere[1].replace(";", "").trim();
+				whereCond = withoutWhere[1].replace(";", "").trim();
 
-			if (whereCond.toLowerCase().contains(" and ") || whereCond.toLowerCase().contains(" or ")) {
-				String[] where = whereCond.split(" and | AND | or | OR ");
-				for (String str : where) {
-					if (!str.trim().isEmpty() && !str.trim().equals("")) {
-						condList.add(str.trim());
+				if (whereCond.toLowerCase().contains(" and ") || whereCond.toLowerCase().contains(" or ")) {
+					String[] where = whereCond.split(" and | AND | or | OR ");
+					for (String str : where) {
+						if (!str.trim().isEmpty() && !str.trim().equals("")) {
+							condList.add(str.trim());
+						}
 					}
-				}
-				if (whereCond.toLowerCase().contains(" and ")) {
-					andFlag = true;
+					if (whereCond.toLowerCase().contains(" and ")) {
+						andFlag = true;
+					} else {
+						orFlag = true;
+					}
 				} else {
-					orFlag = true;
+					condList.add(whereCond.trim());
+					andFlag = true;
 				}
-			} else {
-				condList.add(whereCond.trim());
-				andFlag = true;
+			} catch (Exception e) {
+				System.out.println("Wrong delete SQL!");
+				return;
 			}
-
 		} else {
-			System.out.println("Wrong SQL!");
+			System.out.println("Wrong delete SQL!");
 			return;
 		}
 
