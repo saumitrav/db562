@@ -396,7 +396,9 @@ public class entryClass {
 			System.out.print("\nEnter your choice : ");
 			Scanner scan = new Scanner(System.in);
 			option = scan.next();
-
+			
+			long startTime = System.nanoTime();
+			
 			switch (option) {
 			case "1":
 				createTable();
@@ -445,9 +447,14 @@ public class entryClass {
 				break;
 
 			}
-			if(!option.equals("12")){
-			System.out.println("\nPress ENTER to Continue");
-			System.in.read();}
+			
+			long endTime = System.nanoTime();
+			System.out.println("\nTook "+(endTime - startTime)/1000000 + " milliseconds.");
+			
+			if (!option.equals("12")) {
+				System.out.println("\nPress ENTER to Continue");
+				System.in.read();
+			}
 
 		} while (!option.equals("12"));
 	}
