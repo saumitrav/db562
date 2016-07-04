@@ -1,6 +1,0 @@
-test1_pkey 1
-id1 1
-name 3
-test2_pkey 1
-id2 1
-name2 3

@@ -399,8 +399,6 @@ public class entryClass {
 			Scanner scan = new Scanner(System.in);
 			option = scan.next();
 			
-			long startTime = System.nanoTime();
-			
 			switch (option) {
 			case "1":
 				createTable();
@@ -437,8 +435,11 @@ public class entryClass {
 				System.out.print("\nEnter the SQL statement : ");
 				scan.nextLine();
 				inSQL = scan.nextLine();
+				long startTime = System.nanoTime();
 				parser parse = new parser();
 				parse.parseSQL(inSQL);
+				long endTime = System.nanoTime();
+				System.out.println("\nTook "+(endTime - startTime)/1000000 + " milliseconds.");
 				break;
 			case "12":massInsert();	
 				break;
@@ -450,8 +451,6 @@ public class entryClass {
 
 			}
 
-			long endTime = System.nanoTime();
-			System.out.println("\nTook "+(endTime - startTime)/1000000 + " milliseconds.");
 			if(!option.equals("13")){
 			System.out.println("\nPress ENTER to Continue");
 			System.in.read();}
@@ -815,7 +814,7 @@ public class entryClass {
 //				printColNames(list);
 
 				for (int i = 0; i < len; i++) {
-					for (int k = 0; k < len; k++) {
+					for (int k = 0; k < content.size(); k++) {
 						obj = (JSONObject) content.get(k);
 
 						if (checkDataType == 1) {
@@ -832,6 +831,7 @@ public class entryClass {
 							}
 						}
 					}
+					content.remove(obj);
 //					printObj(list, obj);
 					content2.add(obj);
 				}
