@@ -20,7 +20,9 @@ import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Scanner;
+import java.lang.Object;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -408,7 +410,7 @@ public class entryClass {
 			System.out.println("1)Create New Table\n2)Delete Existing Table\n3)List all tables in Database");
 			System.out.println(
 					"4)Insert Record into a Table\n5)Delete Record from a Table\n6)Update Record from a Table\n7)List content of a Table");
-			System.out.println("8)Search Record for an Attribute\n9)Sort Table\n10)Print B+ tree\n11)Enter SQL command\n12)Exit");
+			System.out.println("8)Search Record for an Attribute\n9)Sort Table\n10)Print B+ tree\n11)Enter SQL command\n12)Mass insert\n13)Exit");
 			System.out.print("\nEnter your choice : ");
 			Scanner scan = new Scanner(System.in);
 			option = scan.next();
@@ -452,7 +454,7 @@ public class entryClass {
 				parser parse = new parser();
 				parse.parseSQL(inSQL);
 				break;
-			case "12":	
+			case "12":massInsert();	
 				break;
 			case "13":
 				break;
@@ -461,11 +463,112 @@ public class entryClass {
 				break;
 
 			}
-			if(!option.equals("12")){
+			if(!option.equals("13")){
 			System.out.println("\nPress ENTER to Continue");
 			System.in.read();}
 
-		} while (!option.equals("12"));
+		} while (!option.equals("13"));
+	}
+
+	private static void massInsert() throws IOException, ParseException {
+
+		System.out.println("Enter Table Name: ");
+		Scanner sc = new Scanner(System.in);
+		String tname = sc.next();
+		String pkey=tname+"_pkey";
+		JSONParser parser = new JSONParser();
+		String name;
+		Random rn = new Random();
+		Object value;
+		String longstring="abcdefghijklmnopqrstuvwxyz";
+		long recid;
+		BTree tree=null;
+		
+
+		
+		if (!tablename.contains(tname)) 
+			System.out.println("Table doesn't Exist");
+		
+		else{
+			
+				//read content for unique key value
+				BufferedReader filekey = new BufferedReader(new FileReader(tname+"_unique.txt"));
+				String keyline = filekey.readLine();
+					String sunique[] = keyline.split(" ");
+					Integer uniquekey=Integer.parseInt(sunique[0]); 								
+				filekey.close();
+				
+				//
+				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+				recid = recman.getNamedObject( tname+"_btree" );
+	            if ( recid != 0 ) {
+	                tree = BTree.load( recman, recid );}
+				do{
+				
+				int len = content.size();				
+				BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				br.readLine();
+				JSONObject newObj=new JSONObject();
+				newObj.put(tname+"_pkey", uniquekey);
+				uniquekey++;
+				while ((name = br.readLine()) != null) {
+					String s[] = name.split(" ");
+					//System.out.println("Enter value for " + s[0]);
+					// type check start
+					if (Integer.parseInt(s[1]) == 1) {
+						value=rn.nextInt(1000 - 1) + 1;
+					}
+					else if (Integer.parseInt(s[1]) == 2) {
+						value=rn.nextFloat() * (10.0f - 1.0f) + 1.0f;
+					}
+					else if (Integer.parseInt(s[1]) == 5) {
+						value=rn.nextBoolean();
+					} 
+					else if (Integer.parseInt(s[1]) == 4) {
+						DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+						Integer date =rn.nextInt(28-1)+1;
+						Integer month=rn.nextInt(12-1)+1;
+						Integer year = rn.nextInt(2999-1867)+1867;
+						value= date.toString()+"-"+month.toString()+"-"+year.toString();
+					} 
+					else {
+						String temp="";
+						for(int i=0;i<8;i++)
+							temp=temp+longstring.charAt(rn.nextInt(25-1)+1);
+						value =temp;
+					}
+					// type check ends
+					newObj.put(s[0], value);
+				}
+				br.close();
+				
+					content.add(newObj);
+					
+				
+				//
+				// writing to b tree
+					if(tree!=null)
+	                tree.insert( uniquekey-1, content.size()-1, false );
+					
+	                
+	           
+				//
+				}while(uniquekey<100000);
+				FileWriter file = new FileWriter(tname + ".json");
+				file.write("");
+				file.write(content.toJSONString());
+				file.close();
+				System.out.println("\nRecord added successfully.");
+			//}
+			//write file content to unique file
+			FileWriter writerunique = new FileWriter(tname+"_unique.txt");
+			writerunique.write("");
+			writerunique.write(uniquekey.toString());
+			writerunique.close();
+			recman.commit();
+		}
+		
+		
 	}
 
 	private static void printBtreeArg(String tname) throws IOException {
@@ -1821,11 +1924,11 @@ public class entryClass {
 
 				}
 			}
-			if (listflag == true) {
-				sortTablelist(tname, content, colname);
-			} else {
-				sortTablelist(tname, content, list);
-			}
+//			if (listflag == true) {
+//				sortTablelist(tname, content, colname);
+//			} else {
+//				sortTablelist(tname, content, list);
+//			}
 
 		}
 

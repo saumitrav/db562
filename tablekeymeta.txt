@@ -1,5 +1,6 @@
 test1_test2 test1_pkey
 movie movieID
 artist artistID
+mass mass_pkey
 tempfile movieID
 test1 test1_pkey
