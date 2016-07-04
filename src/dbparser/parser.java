@@ -181,7 +181,6 @@ public class parser {
 		}
 		
 		if(joinFlag){
-			//TODO handle wrong conditions when keys are not present
 			if(tableList.size()>2){
 				System.out.println("More than 2 tables. Cannot join. Returning to main menu!");
 				return;
@@ -359,6 +358,10 @@ public class parser {
 
 			String[] setConds = setVals.split(",");
 			for (String str : setConds) {
+				if(str.contains(table+"_pkey")){
+					System.out.println("Tried to update primary. Kindly never try this again.");
+					return;
+				}
 				if (!str.trim().isEmpty() && !str.trim().equals("")) {
 					setList.add(str.trim());
 				}
@@ -396,7 +399,7 @@ public class parser {
 				if(andFlag){
 					entry.searchForSQL(table+"_temp", condList);
 				}else if(orFlag){
-					//TODO code for OR in where
+					entry.searchForOrSQL(table+"_temp", condList);
 				}
 			}
 		}
@@ -459,7 +462,7 @@ public class parser {
 		if (andFlag) {
 			entry.deleteForSQL(table, condList);
 		} else if (orFlag) {
-			// TODO code for OR in where
+			entry.deleteForOrSQL(table, condList);
 		}
 
 		entry.deleteTempTable(table + "_temp");
