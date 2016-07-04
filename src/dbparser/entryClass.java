@@ -1330,7 +1330,7 @@ public class entryClass {
 		}
 	}
 	
-	public void searchForOrSQL(String tableName, ArrayList<String> whereConds) throws IOException {
+	public int searchForOrSQL(String tableName, ArrayList<String> whereConds) throws IOException {
 		String line;
 		String pkey = "";
 		JSONObject obj;
@@ -1370,10 +1370,12 @@ public class entryClass {
 				operatorFlag = true;
 			} else {
 				System.out.println("Where operator invalid!");
+				return -1;
 			}
 
 			if (!tablename.contains(tableName)) {
 				System.out.println("Table does not exist!");
+				return -1;
 			} else {
 				try {
 					BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
@@ -1397,13 +1399,15 @@ public class entryClass {
 
 					if (columnNameFlag == false) {
 						System.out.println(
-								"The column name: " + columnName + " does not exist in given table: " + tableName);
+								"The column name: " + columnName + " does not exist in given table: " + tableName.replace("_temp", ""));
+						return -1;
 					} else {
 						try {
 							content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
 						} catch (ParseException e) {
 							System.out.println("ParseException in search method");
-							e.printStackTrace();
+//							e.printStackTrace();
+							return -1;
 						}
 						int len = content.size();
 						if (content != null && operatorFlag == true) {
@@ -1454,6 +1458,7 @@ public class entryClass {
 										}
 									} catch (Exception e) {
 										 System.out.println("The value: " + valueToSearch + " does not exist in this table");
+										 return -1;
 									}
 
 								} else if (checkDataType == 2) {
@@ -1491,21 +1496,25 @@ public class entryClass {
 										}
 									} catch (Exception e) {
 										 System.out.println("The value: " + valueToSearch + " does not exist in this table");
+										 return -1;
 									}
 								}
 							}
 						} else {
 							System.out.println(
 									"Unable to perform search. Please enter table name, column name and operator values correctly");
+							return -1;
 						}
 					}
 
 				} catch (FileNotFoundException e) {
 					System.out.println("Unable to read file tablekeymeta.txt in search method");
-					e.printStackTrace();
+//					e.printStackTrace();
+					return -1;
 				} catch (IOException io) {
 					System.out.println("IOException in search method");
-					io.printStackTrace();
+//					io.printStackTrace();
+					return -1;
 				}
 			}
 		}
@@ -1515,7 +1524,8 @@ public class entryClass {
 			content2 = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
 		} catch (ParseException e) {
 			System.out.println("ParseException in search method");
-			e.printStackTrace();
+//			e.printStackTrace();
+			return -1;
 		}
 		int len = content2.size();
 		if (content2 != null) {
@@ -1529,13 +1539,18 @@ public class entryClass {
 		FileWriter file = new FileWriter(tableName + ".json");
 		file.write(content3.toJSONString());
 		file.close();
+		return 0;
 	}
 	
-	public void searchForSQL(String tableName, ArrayList<String> whereConds) {
+	public int searchForSQL(String tableName, ArrayList<String> whereConds) {
 		
 		for (String cond : whereConds) {
 			String delims = "((?<=>|<|=)|(?=>|<|=))";
 			String[] currCond = cond.split(delims);
+			if(currCond.length > 3){
+				System.out.println("Wrong condition in where clause!");
+				return -1;
+			}
 			String columnName = currCond[0].trim();
 			String operator = currCond[1].trim();
 			String valueToSearch = currCond[2].trim();
@@ -1561,6 +1576,7 @@ public class entryClass {
 
 			if (!tablename.contains(tableName)) {
 				System.out.println("Table does not exist!");
+				return -1;
 			} else {
 				try {
 					BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
@@ -1583,8 +1599,10 @@ public class entryClass {
 					bufferedReader.close();
 
 					if (columnNameFlag == false) {
+						tableName = tableName.replace("_temp", ""); 
 						System.out.println(
 								"The column name: " + columnName + " does not exist in given table: " + tableName);
+						return -1;
 					} else {
 						try {
 							content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
@@ -1674,18 +1692,22 @@ public class entryClass {
 						} else {
 							System.out.println(
 									"Unable to perform search. Please enter table name, column name and operator values correctly");
+							return -1;
 						}
 					}
 
 				} catch (FileNotFoundException e) {
 					System.out.println("Unable to read file tablekeymeta.txt in search method");
-					e.printStackTrace();
+//					e.printStackTrace();
+					return -1;
 				} catch (IOException io) {
 					System.out.println("IOException in search method");
-					io.printStackTrace();
+//					io.printStackTrace();
+					return -1;
 				}
 			}
 		}
+		return 0;
 	}
 
 	private static void searchFromTable() {

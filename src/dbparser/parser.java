@@ -97,8 +97,13 @@ public class parser {
 						orderBy = withoutSem[0];
 					} else {
 						String delimSem = "\\s*;\\s*";
+						try{
 						String[] withoutSem = withoutFrom[1].split(delimSem);
 						tables = withoutSem[0];
+						}catch(Exception e){
+							System.out.println("Wrong SQL!");
+							return;
+						}
 					}
 				}
 
@@ -107,9 +112,11 @@ public class parser {
 				}
 			} else {
 				System.out.println("Wrong SQL!");
+				return;
 			}
 		} else {
 			System.out.println("Wrong SQL!");
+			return;
 		}
 
 		// finding the attributes
@@ -134,6 +141,10 @@ public class parser {
 				}
 			}
 		} else {
+			if(tables.trim().equals("")){
+				System.out.println("No tables specified in the SQL!");
+				return;
+			}
 			tableList.add(tables.trim());
 		}
 
@@ -175,7 +186,7 @@ public class parser {
 		
 		for(String str:tableList){
 			if(!entry.tablename.contains(str)){
-				System.out.println("Table "+str+" does not exist!");
+				System.out.println("Table "+str+" does not exist! Wrong SQL!");
 				return;
 			}
 		}
@@ -187,24 +198,23 @@ public class parser {
 			}else{
 				String cond = "";
 				boolean flag = false;
-				for(String str:condList){
-					String[] currCond = str.split("((?<==)|(?==))");
-					String pkey1 = currCond[0].trim();
-					String operator = currCond[1].trim();
-					String pkey2 = currCond[2].trim();
-					if (tableList.contains(pkey1.replace("_pkey", ""))) {
-						if (tableList.contains(pkey2.replace("_pkey", ""))) {
-							if (operator.equals("=")) {
-								flag = true;
-								cond = str;
-								break;
-							}
+				for (String str : condList) {
+					if (str.contains("=")) {
+						String[] currCond = str.split("((?<==)|(?==))");
+						String pkey1 = currCond[0].trim();
+						String operator = currCond[1].trim();
+						String pkey2 = currCond[2].trim();
+						if (tableList.contains(pkey1.replace("_pkey", ""))
+								&& tableList.contains(pkey2.replace("_pkey", "")) && operator.equals("=")) {
+							flag = true;
+							cond = str;
+							break;
 						}
 					}
 				}
 				condList.remove(cond);
 				if(!flag){
-					System.out.println("Wrong join condition!");
+					System.out.println("Wrong/Absent join condition!");
 					return;
 				}
 				entry.joinOnPkey(tableList.get(0), tableList.get(1));
@@ -238,14 +248,21 @@ public class parser {
 				try {
 					Integer.parseInt(valueToSearch);
 				} catch (Exception e) {
-					System.out.println("Primary key attribute not an integer!");
+					System.out.println("Value to search on the primary key is not integer!");
+					return;
 				}
 				entry.searchOnPrimKey(tname+"_temp", operator, Integer.parseInt(valueToSearch));
 			}
 			if (andFlag) {
-				entry.searchForSQL(tname+"_temp", condList);
+				int ret = entry.searchForSQL(tname+"_temp", condList);
+				if (ret == -1){
+					return;
+				}
 			}else if(orFlag){
-				entry.searchForOrSQL(tname+"_temp", condList);
+				int ret = entry.searchForOrSQL(tname+"_temp", condList);
+				if (ret == -1){
+					return;
+				}
 			}
 		}
 		
@@ -289,6 +306,7 @@ public class parser {
 
 		} else {
 			System.out.println("Wrong SQL!");
+			return;
 		}
 
 		// finding the attributes
@@ -387,6 +405,7 @@ public class parser {
 			}
 		} else {
 			System.out.println("Wrong SQL!");
+			return;
 		}
 		
 		// creating a temp file to perform operations on
@@ -397,9 +416,15 @@ public class parser {
 		if(whereFlag){
 			if(whereFlag){
 				if(andFlag){
-					entry.searchForSQL(table+"_temp", condList);
+					int ret = entry.searchForSQL(table+"_temp", condList);
+					if (ret == -1){
+						return;
+					}
 				}else if(orFlag){
-					entry.searchForOrSQL(table+"_temp", condList);
+					int ret = entry.searchForOrSQL(table+"_temp", condList);
+					if (ret == -1){
+						return;
+					}
 				}
 			}
 		}
@@ -453,6 +478,7 @@ public class parser {
 
 		} else {
 			System.out.println("Wrong SQL!");
+			return;
 		}
 
 		// creating a temp file to perform operations on
