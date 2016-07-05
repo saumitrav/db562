@@ -1870,6 +1870,7 @@ public class entryClass {
 				recman.commit();
 			}
 			System.out.println("\n1 record deleted.");
+			recreateIndexOnCol(tname);
 			}else{
 				System.out.println("\nPrimary key " + pkeyVal + "not found.");
 			}
