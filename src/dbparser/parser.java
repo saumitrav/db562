@@ -57,333 +57,386 @@ public class parser {
 		long recid;
 		BTree tree;
 
-		if (inSQL.toLowerCase().contains("select")) {
-			String delimSel = "select\\s*|SELECT\\s*";
-			String[] withoutSel = inSQL.split(delimSel);
-			if(withoutSel.length<2){
-				System.out.println("Wrong SQL!");
-				return;
-			}
-			if (!withoutSel[1].equals(null) && withoutSel[1].toLowerCase().contains("from")) {
-				String delimFrom = "\\s*from\\s*|\\s*FROM\\s*";
-				String[] withoutFrom = withoutSel[1].split(delimFrom);
-				if(withoutFrom.length<2){
+		try {
+			if (inSQL.toLowerCase().contains("select")) {
+				String delimSel = "select\\s*|SELECT\\s*";
+				String[] withoutSel = inSQL.split(delimSel);
+				if (withoutSel.length < 2) {
 					System.out.println("Wrong SQL!");
 					return;
 				}
-				attributes = withoutFrom[0];
-				
-				if (inSQL.toLowerCase().contains(" where ")) {
-					whereFlag = true;
-				}
-				if (inSQL.toLowerCase().contains(" order by ")) {
-					orderFlag = true;
-				}
-
-				if (whereFlag) {
-					String delimWhere = "\\s*where\\s*|\\s*WHERE\\s*";
-					String[] withoutWhere = withoutFrom[1].split(delimWhere);
-					if(withoutWhere.length<2){
+				if (!withoutSel[1].equals(null) && withoutSel[1].toLowerCase().contains("from")) {
+					String delimFrom = "\\s*from\\s*|\\s*FROM\\s*";
+					String[] withoutFrom = withoutSel[1].split(delimFrom);
+					if (withoutFrom.length < 2) {
 						System.out.println("Wrong SQL!");
 						return;
 					}
-					tables = withoutWhere[0];
+					attributes = withoutFrom[0];
 
-					if (orderFlag) {
-						String delimOrder = "\\s*order by\\s*|\\s*ORDER BY\\s*";
-						String[] withoutOrder = withoutWhere[1].split(delimOrder);
-						if(withoutOrder.length<2){
+					if (inSQL.toLowerCase().contains(" where ")) {
+						whereFlag = true;
+					}
+					if (inSQL.toLowerCase().contains(" order by ")) {
+						orderFlag = true;
+					}
+
+					if (whereFlag) {
+						String delimWhere = "\\s*where\\s*|\\s*WHERE\\s*";
+						String[] withoutWhere = withoutFrom[1].split(delimWhere);
+						if (withoutWhere.length < 2) {
 							System.out.println("Wrong SQL!");
 							return;
 						}
-						whereCond = withoutOrder[0];
+						tables = withoutWhere[0];
 
-						String delimSem = "\\s*;\\s*";
-						String[] withoutSem = withoutOrder[1].split(delimSem);
-						orderBy = withoutSem[0];
+						if (orderFlag) {
+							String delimOrder = "\\s*order by\\s*|\\s*ORDER BY\\s*";
+							String[] withoutOrder = withoutWhere[1].split(delimOrder);
+							if (withoutOrder.length < 2) {
+								System.out.println("Wrong SQL!");
+								return;
+							}
+							whereCond = withoutOrder[0];
+
+							String delimSem = "\\s*;\\s*";
+							String[] withoutSem = withoutOrder[1].split(delimSem);
+							orderBy = withoutSem[0];
+						} else {
+							String delimSem = "\\s*;\\s*";
+							String[] withoutSem = withoutWhere[1].split(delimSem);
+							whereCond = withoutSem[0];
+						}
 					} else {
-						String delimSem = "\\s*;\\s*";
-						String[] withoutSem = withoutWhere[1].split(delimSem);
-						whereCond = withoutSem[0];
-					}
-				} else {
-					if (orderFlag) {
-						String delimOrder = "\\s*order by\\s*|\\s*ORDER BY\\s*";
-						String[] withoutOrder = withoutFrom[1].split(delimOrder);
-						if(withoutOrder.length<2){
-							System.out.println("Wrong SQL!");
-							return;
-						}
-						tables = withoutOrder[0];
+						if (orderFlag) {
+							String delimOrder = "\\s*order by\\s*|\\s*ORDER BY\\s*";
+							String[] withoutOrder = withoutFrom[1].split(delimOrder);
+							if (withoutOrder.length < 2) {
+								System.out.println("Wrong SQL!");
+								return;
+							}
+							tables = withoutOrder[0];
 
-						String delimSem = "\\s*;\\s*";
-						String[] withoutSem = withoutOrder[1].split(delimSem);
-						orderBy = withoutSem[0];
-					} else {
-						String delimSem = "\\s*;\\s*";
-						try{
-						String[] withoutSem = withoutFrom[1].split(delimSem);
-						tables = withoutSem[0];
-						}catch(Exception e){
-							System.out.println("Wrong SQL!");
-							return;
+							String delimSem = "\\s*;\\s*";
+							String[] withoutSem = withoutOrder[1].split(delimSem);
+							orderBy = withoutSem[0];
+						} else {
+							String delimSem = "\\s*;\\s*";
+							try {
+								String[] withoutSem = withoutFrom[1].split(delimSem);
+								tables = withoutSem[0];
+							} catch (Exception e) {
+								System.out.println("Wrong SQL!");
+								return;
+							}
 						}
 					}
-				}
-			} else {
-				System.out.println("Wrong SQL!");
-				return;
-			}
-		} else {
-			System.out.println("Wrong SQL!");
-			return;
-		}
-
-		// finding the attributes
-		if (attributes.contains(",")) {
-			String[] attributestemp = attributes.split(",");
-			if(attributestemp.length<2){
-				System.out.println("Wrong SQL!");
-				return;
-			}
-			for (String str : attributestemp) {
-				if (!str.isEmpty() && !str.trim().equals("")) {
-					attributeList.add(str.trim());
-				}
-			}
-			if(attributeList.size()<2){
-				System.out.println("Wrong SQL!");
-				return;
-			}
-		} else {
-			attributeList.add(attributes.trim());
-		}
-		if(attributeList.isEmpty()){
-			System.out.println("Wrong SQL! Wrong attributes!");
-			return;
-		}
-
-		// finding the tables
-		if (tables.contains(",")) {
-			String[] tablestemp = tables.split(",");
-			for (String str : tablestemp) {
-				if (!str.trim().isEmpty() && !str.trim().equals("")) {
-					tableList.add(str.trim());
-					joinFlag = true;
-				}
-			}
-			if(tableList.size()<2){
-				System.out.println("Wrong SQL!");
-				return;
-			}
-		} else {
-			if(tables.trim().equals("")){
-				System.out.println("No tables specified in the SQL!");
-				return;
-			}
-			if(tables.trim().contains(" ")){
-				System.out.println("Tables not comma sepatared!");
-				return;
-			}
-			tableList.add(tables.trim());
-		}
-
-		// finding the conditions, if any
-		if (whereFlag) {
-			if (whereCond.toLowerCase().contains(" and ") || whereCond.toLowerCase().contains(" or ")) {
-				String[] where = whereCond.split(" and | AND | or | OR ");
-				if(where.length<2){
-					System.out.println("Something wrong in the where clause!");
-					return;
-				}
-				for (String str : where) {
-					if (!str.trim().isEmpty() && !str.trim().equals(" ")) {
-						condList.add(str.trim());
-					}
-				}
-				if(condList.size()<2){
-					System.out.println("Something wrong in the where clause!");
-					return;
-				}
-				if (whereCond.toLowerCase().contains(" and ")) {
-					andFlag = true;
 				} else {
-					orFlag = true;
-				}
-			} else {
-				if(whereCond.trim().equals("")){
-					System.out.println("Where condition absent!");
-					return;
-				}
-				condList.add(whereCond.trim());
-				andFlag = true;
-			}
-		}
-
-		// finding order by order, if any
-		if (orderFlag) {
-			if (orderBy.toLowerCase().contains(" desc")) {
-				ascending = false;
-				orderBy = orderBy.replace("desc", "").trim();
-			} else {
-				if (orderBy.toLowerCase().contains("asc")) {
-					orderBy = orderBy.replace("asc", "").trim();
-				} else {
-					orderBy = orderBy.trim();
-				}
-			}
-			if(orderBy.equals("")){
-				System.out.println("Order by attribute not supplied!");
-				return;
-			}
-		}
-
-		entryClass entry = new entryClass();
-		
-		for(String str:tableList){
-			if(!entry.tablename.contains(str)){
-				if(str.contains(" ")){
 					System.out.println("Wrong SQL!");
 					return;
 				}
-				System.out.println("Table "+str+" does not exist! Wrong SQL!");
+			} else {
+				System.out.println("Wrong SQL!");
 				return;
 			}
-		}
-		
-		if(joinFlag){
-			if(tableList.size()>2){
-				System.out.println("More than 2 tables. Cannot join. Returning to main menu!");
-				return;
-			}else{
-				String cond = "";
-				boolean flag = false;
-				for (String str : condList) {
-					if (str.contains("=")) {
-						String[] currCond = str.split("((?<==)|(?==))");
-						String pkey1 = currCond[0].trim();
-						String operator = currCond[1].trim();
-						String pkey2 = currCond[2].trim();
-						if (tableList.contains(pkey1.replace("_pkey", ""))
-								&& tableList.contains(pkey2.replace("_pkey", "")) && operator.equals("=")) {
-							flag = true;
-							cond = str;
-							break;
-						}
+
+			// finding the attributes
+			if (attributes.contains(",")) {
+				String[] attributestemp = attributes.split(",");
+				if (attributestemp.length < 2) {
+					System.out.println("Wrong SQL!");
+					return;
+				}
+				for (String str : attributestemp) {
+					if (!str.isEmpty() && !str.trim().equals("")) {
+						attributeList.add(str.trim());
 					}
 				}
-				condList.remove(cond);
-				if(!flag){
-					System.out.println("Wrong/Absent join condition!");
+				if (attributeList.size() < 2) {
+					System.out.println("Wrong SQL!");
 					return;
 				}
-				entry.joinOnPkey(tableList.get(0), tableList.get(1));
-				tname = tableList.get(0) + "_" + tableList.get(1);
+			} else {
+				attributeList.add(attributes.trim());
 			}
-		}else{
-			tname = tableList.get(0);
-			//creating a temp file to perform operations on
-			entry.createTempTable(tname, tname+"_temp");
-		}
-		
-		if(whereFlag){
-			//get pkey of the table
-			//check if the condList contains that primary key
-			//remove that condition from condList and call function for search based on pkey
-			boolean pkeyFlag = false;
-			String pkey = entry.getPkey(tname);
-			String cond = "";
-			for (String str : condList) {
-				if (str.contains(pkey)) {
-					pkeyFlag = true;
-					cond = str;
-					break;
+			if (attributeList.isEmpty()) {
+				System.out.println("Wrong SQL! Wrong attributes!");
+				return;
+			}
+
+			// finding the tables
+			if (tables.contains(",")) {
+				String[] tablestemp = tables.split(",");
+				for (String str : tablestemp) {
+					if (!str.trim().isEmpty() && !str.trim().equals("")) {
+						tableList.add(str.trim());
+						joinFlag = true;
+					}
 				}
-			}
-			if (pkeyFlag) {
-				String[] currCond = cond.split("((?<=>|<|=)|(?=>|<|=))");
-				String operator = currCond[1].trim();
-				String valueToSearch = currCond[2].trim();
-				try {
-					Integer.parseInt(valueToSearch);
-				} catch (Exception e) {
-					System.out.println("Value to search on the primary key is not integer!");
+				if (tableList.size() < 2) {
+					System.out.println("Wrong SQL!");
 					return;
 				}
-				entry.searchOnPrimKey(tname, operator, Integer.parseInt(valueToSearch));
-				condList.remove(cond);
+			} else {
+				if (tables.trim().equals("")) {
+					System.out.println("No tables specified in the SQL!");
+					return;
+				}
+				if (tables.trim().contains(" ")) {
+					System.out.println("Tables not comma sepatared!");
+					return;
+				}
+				tableList.add(tables.trim());
 			}
-			if (andFlag) {
-				if (entry.searchUsingIndex) {
-					ArrayList<String> condToRem = new ArrayList<String>();
+
+			// finding the conditions, if any
+			if (whereFlag) {
+				if (whereCond.toLowerCase().contains(" and ") || whereCond.toLowerCase().contains(" or ")) {
+					String[] where = whereCond.split(" and | AND | or | OR ");
+					if (where.length < 2) {
+						System.out.println("Something wrong in the where clause!");
+						return;
+					}
+					for (String str : where) {
+						if (!str.trim().isEmpty() && !str.trim().equals(" ")) {
+							condList.add(str.trim());
+						}
+					}
+					if (condList.size() < 2) {
+						System.out.println("Something wrong in the where clause!");
+						return;
+					}
+					if (whereCond.toLowerCase().contains(" and ")) {
+						andFlag = true;
+					} else {
+						orFlag = true;
+					}
+				} else {
+					if (whereCond.trim().equals("")) {
+						System.out.println("Where condition absent!");
+						return;
+					}
+					condList.add(whereCond.trim());
+					andFlag = true;
+				}
+			}
+
+			// finding order by order, if any
+			if (orderFlag) {
+				if (orderBy.toLowerCase().contains(" desc")) {
+					ascending = false;
+					orderBy = orderBy.replace("desc", "").trim();
+				} else {
+					if (orderBy.toLowerCase().contains("asc")) {
+						orderBy = orderBy.replace("asc", "").trim();
+					} else {
+						orderBy = orderBy.trim();
+					}
+				}
+				if (orderBy.equals("")) {
+					System.out.println("Order by attribute not supplied!");
+					return;
+				}
+			}
+
+			entryClass entry = new entryClass();
+
+			for (String str : tableList) {
+				if (!entry.tablename.contains(str)) {
+					if (str.contains(" ")) {
+						System.out.println("Wrong SQL!");
+						return;
+					}
+					System.out.println("Table " + str + " does not exist! Wrong SQL!");
+					return;
+				}
+			}
+
+			if (joinFlag) {
+				if (tableList.size() > 2) {
+					System.out.println("More than 2 tables. Cannot join. Returning to main menu!");
+					return;
+				} else {
+					String cond = "";
+					boolean flag = false;
 					for (String str : condList) {
-						String delims = "((?<=>|<|=)|(?=>|<|=))";
-						String[] currCond = str.split(delims);
-						if (currCond.length > 3) {
-							System.out.println("Wrong condition in where clause!");
-							entry.searchUsingIndex = false;
-							return;
-						}
-						String columnName = currCond[0].trim();
-						String operator = currCond[1].trim();
-						String valueToSearch = currCond[2].trim();
-						if (valueToSearch.contains("'")) {
-							valueToSearch = valueToSearch.replace("'", "").trim();
-						}
-						recid = entry.recman.getNamedObject(tname + "_" + columnName + "_btree");
-						if (recid != 0) {
-							HashMap<String, Integer> dtype = entry.returnDataType(tname);
-							int ret = 0;
-							if (dtype.get(columnName) == 1) {
-								ret = entry.searchOnIndexedKey(tname, columnName, operator,
-										Integer.parseInt(valueToSearch));
-								if (ret != -1) {
-									condToRem.add(str);
-								}
-							} else if (dtype.get(columnName) != 2) {
-								ret = entry.searchOnIndexedKey2(tname, columnName, operator, valueToSearch);
-								if (ret != -1) {
-									condToRem.add(str);
-								}
+						if (str.contains("=")) {
+							String[] currCond = str.split("((?<==)|(?==))");
+							String pkey1 = currCond[0].trim();
+							String operator = currCond[1].trim();
+							String pkey2 = currCond[2].trim();
+							if (tableList.contains(pkey1.replace("_pkey", ""))
+									&& tableList.contains(pkey2.replace("_pkey", "")) && operator.equals("=")) {
+								flag = true;
+								cond = str;
+								break;
 							}
-							if (ret == -1) {
-								System.out.println("Problem in searching by indexed attributes!");
+						}
+					}
+					condList.remove(cond);
+					if (!flag) {
+						System.out.println("Wrong/Absent join condition!");
+						return;
+					}
+					entry.joinOnPkey(tableList.get(0), tableList.get(1));
+					tname = tableList.get(0) + "_" + tableList.get(1);
+				}
+			} else {
+				tname = tableList.get(0);
+				// creating a temp file to perform operations on
+				entry.createTempTable(tname, tname + "_temp");
+			}
+
+			if (whereFlag) {
+				// get pkey of the table
+				// check if the condList contains that primary key
+				// remove that condition from condList and call function for
+				// search based on pkey
+				boolean pkeyFlag = false;
+				String pkey = entry.getPkey(tname);
+				String cond = "";
+				for (String str : condList) {
+					if (str.contains(pkey)) {
+						pkeyFlag = true;
+						cond = str;
+						break;
+					}
+				}
+				if (pkeyFlag) {
+					String[] currCond = cond.split("((?<=>|<|=)|(?=>|<|=))");
+					String operator = currCond[1].trim();
+					String valueToSearch = currCond[2].trim();
+					try {
+						Integer.parseInt(valueToSearch);
+					} catch (Exception e) {
+						System.out.println("Value to search on the primary key is not integer!");
+						return;
+					}
+					entry.searchOnPrimKey(tname, operator, Integer.parseInt(valueToSearch));
+					condList.remove(cond);
+				}
+				if (andFlag) {
+					if (entry.searchUsingIndex) {
+						ArrayList<String> condToRem = new ArrayList<String>();
+						for (String str : condList) {
+							String delims = "((?<=>|<|=)|(?=>|<|=))";
+							String[] currCond = str.split(delims);
+							if (currCond.length > 3) {
+								System.out.println("Wrong condition in where clause!");
 								entry.searchUsingIndex = false;
 								return;
 							}
+							String columnName = currCond[0].trim();
+							String operator = currCond[1].trim();
+							String valueToSearch = currCond[2].trim();
+							if (valueToSearch.contains("'")) {
+								valueToSearch = valueToSearch.replace("'", "").trim();
+							}
+							recid = entry.recman.getNamedObject(tname + "_" + columnName + "_btree");
+							if (recid != 0) {
+								HashMap<String, Integer> dtype = entry.returnDataType(tname);
+								int ret = 0;
+								if (dtype.get(columnName) == 1) {
+									ret = entry.searchOnIndexedKey(tname, columnName, operator,
+											Integer.parseInt(valueToSearch));
+									if (ret != -1) {
+										condToRem.add(str);
+									}
+								} else if (dtype.get(columnName) != 2) {
+									ret = entry.searchOnIndexedKey2(tname, columnName, operator, valueToSearch);
+									if (ret != -1) {
+										condToRem.add(str);
+									}
+								}
+								if (ret == -1) {
+									System.out.println("Problem in searching by indexed attributes!");
+									entry.searchUsingIndex = false;
+									return;
+								}
 
+							}
+						}
+						for (String str : condToRem) {
+							condList.remove(str);
+						}
+						entry.searchUsingIndex = false;
+					}
+					if (!condList.isEmpty()) {
+						int ret = entry.searchForSQL(tname + "_temp", condList);
+						if (ret == -1) {
+							return;
 						}
 					}
-					for (String str : condToRem) {
-						condList.remove(str);
+				} else if (orFlag) {
+					if (entry.searchUsingIndex) {
+						ArrayList<String> condToRem = new ArrayList<String>();
+						for (String str : condList) {
+							String delims = "((?<=>|<|=)|(?=>|<|=))";
+							String[] currCond = str.split(delims);
+							if (currCond.length > 3) {
+								System.out.println("Wrong condition in where clause!");
+								entry.searchUsingIndex = false;
+								return;
+							}
+							String columnName = currCond[0].trim();
+							String operator = currCond[1].trim();
+							String valueToSearch = currCond[2].trim();
+							if (valueToSearch.contains("'")) {
+								valueToSearch = valueToSearch.replace("'", "").trim();
+							}
+							recid = entry.recman.getNamedObject(tname + "_" + columnName + "_btree");
+							if (recid != 0) {
+								HashMap<String, Integer> dtype = entry.returnDataType(tname);
+								int ret = 0;
+								if (dtype.get(columnName) == 1) {
+									ret = entry.searchOnIndexedKey3(tname, columnName, operator,
+											Integer.parseInt(valueToSearch));
+									if (ret != -1) {
+										condToRem.add(str);
+									}
+								} else if (dtype.get(columnName) != 2) {
+									ret = entry.searchOnIndexedKey4(tname, columnName, operator, valueToSearch);
+									if (ret != -1) {
+										condToRem.add(str);
+									}
+								}
+								if (ret == -1) {
+									System.out.println("Problem in searching by indexed attributes!");
+									entry.searchUsingIndex = false;
+									return;
+								}
+
+							}
+						}
+						for (String str : condToRem) {
+							condList.remove(str);
+						}
+						entry.searchUsingIndex = false;
 					}
-					entry.searchUsingIndex = false;
-				}
-				int ret = entry.searchForSQL(tname+"_temp", condList);
-				if (ret == -1){
-					return;
-				}
-			}else if(orFlag){
-				int ret = entry.searchForOrSQL(tname+"_temp", condList);
-				if (ret == -1){
-					return;
+					if (!condList.isEmpty()) {
+						int ret = entry.searchForOrSQL(tname + "_temp", condList);
+						if (ret == -1) {
+							return;
+						}
+					}
 				}
 			}
-		}
-		
 
-		//order by handling, if present
-		if(orderFlag){
-			entry.sortTableSQL(tname+"_temp", orderBy, ascending);
+			// order by handling, if present
+			if (orderFlag) {
+				entry.sortTableSQL(tname + "_temp", orderBy, ascending);
+			}
+
+			// taking projection/selection
+			entry.projectionForSQL(tname + "_temp", attributeList);
+
+			// printing the table
+			entry.printTable(tname + "_temp");
+
+			entry.deleteTempTable(tname + "_temp");
+		} catch (Exception e) {
+			System.out.println("Wrong select SQL!");
 		}
-		
-		//taking projection/selection
-		entry.projectionForSQL(tname+"_temp", attributeList);
-		
-		//printing the table
-		entry.printTable(tname+"_temp");
-		
-		entry.deleteTempTable(tname + "_temp");
 	}
 
 	private static void parseInsert(String inSQL) throws IOException, ParseException {
