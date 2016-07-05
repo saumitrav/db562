@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -331,16 +332,29 @@ public class parser {
 						}
 						recid = entry.recman.getNamedObject(tname + "_" + columnName + "_btree");
 						if (recid != 0) {
-							int ret = entry.searchOnIndexedKey(tname, columnName, operator, valueToSearch);
-							if(ret==-1){
+							HashMap<String, Integer> dtype = entry.returnDataType(tname);
+							int ret = 0;
+							if (dtype.get(columnName) == 1) {
+								ret = entry.searchOnIndexedKey(tname, columnName, operator,
+										Integer.parseInt(valueToSearch));
+								if (ret != -1) {
+									condToRem.add(str);
+								}
+							} else if (dtype.get(columnName) != 2) {
+								ret = entry.searchOnIndexedKey2(tname, columnName, operator, valueToSearch);
+								if (ret != -1) {
+									condToRem.add(str);
+								}
+							}
+							if (ret == -1) {
 								System.out.println("Problem in searching by indexed attributes!");
 								entry.searchUsingIndex = false;
 								return;
 							}
-							condToRem.add(str);
+
 						}
 					}
-					for(String str:condToRem){
+					for (String str : condToRem) {
 						condList.remove(str);
 					}
 					entry.searchUsingIndex = false;
