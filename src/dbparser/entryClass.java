@@ -83,6 +83,7 @@ public class entryClass {
 
 //		searchOnPrimKey("test1", "<", 2);
 //		joinOnPkey("test1","test2");
+		searchOnIndexedKey2("test1","id2","<","32");
 
 		/// load all changes to file again
 		FileWriter writer = new FileWriter("tableList.txt");
@@ -519,6 +520,152 @@ public class entryClass {
 									if (!str.trim().equals("")) {
 										location = Integer.parseInt(str.trim());
 										float tempkey = (float) tuple.getKey();
+										if (location < content.size() && tempkey > Float.parseFloat(value)) {
+											object = (JSONObject) content.get(location);
+											list.add(object);
+										}
+									}
+								}
+							} else {
+								location = Integer.parseInt(temp.trim());
+								float tempkey = (float) tuple.getKey();
+								if (location < content.size() && tempkey > Float.parseFloat(value)) {
+									object = (JSONObject) content.get(location);
+									list.add(object);
+								}
+							}
+						}
+						FileWriter file = new FileWriter(tname + "_temp.json");
+						file.write("");
+						file.write(list.toJSONString());
+						file.close();
+					} else {
+						System.out.println("Tree not present");
+						return -1;
+					}
+				} else if (opr.equals(">")) {
+					recid = recman.getNamedObject(tname + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						browser = tree.browse(value);
+						while (browser.getPrevious(tuple)) {
+							String temp = tuple.getValue().toString();
+							if (temp.contains(",")) {
+								String[] objLocs = temp.split(",");
+								for (String str : objLocs) {
+									if (!str.trim().equals("")) {
+										location = Integer.parseInt(str.trim());
+										float tempkey = (float) tuple.getKey();
+										if (location < content.size() && tempkey > Float.parseFloat(value)) {
+											object = (JSONObject) content.get(location);
+											list.add(object);
+										}
+									}
+								}
+							} else {
+								location = Integer.parseInt(temp.trim());
+								float tempkey = (float) tuple.getKey();
+								if (location < content.size() && tempkey > Float.parseFloat(value)) {
+									object = (JSONObject) content.get(location);
+									list.add(object);
+								}
+							}
+						}
+						FileWriter file = new FileWriter(tname + "_temp.json");
+						file.write("");
+						file.write(list.toJSONString());
+						file.close();
+					} else {
+						System.out.println("Tree not present");
+						return -1;
+					}
+				} else {
+					 System.out.println("invalid operation");
+				}
+			}
+		}
+		return 0;
+	}
+
+	public static int searchOnIndexedKey2(String tname, String attribute, String opr, String value)
+			throws IOException, ParseException {
+		long recid;
+		BTree tree = null;
+		Tuple tuple = new Tuple();
+		TupleBrowser browser;
+		Object obj = null;
+		JSONParser parser = new JSONParser();
+		int location = Integer.MAX_VALUE;
+		if (!tablename.contains(tname)) {
+			// System.out.println("Table doesn't Exist");
+		} else {
+			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+			JSONArray list = new JSONArray();
+			JSONObject object;
+			if (opr.equals("<") || opr.equals(">") || opr.equals("=")) {
+				if (opr.equals("=")) {
+					recid = recman.getNamedObject(tname + attribute + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						obj = tree.find(value);
+						if (obj != null) {
+							if (obj.toString().contains(",")) {
+								String[] objLocs = obj.toString().split(",");
+								for (String str : objLocs) {
+									if (!str.trim().equals("")) {
+										location = Integer.parseInt(str.trim());
+										if (location < content.size()) {
+											object = (JSONObject) content.get(location);
+											list.add(object);
+											
+										}
+									}
+								}
+								FileWriter file = new FileWriter(tname + "_temp.json");
+								file.write("");
+								file.write(list.toJSONString());
+								file.close();
+								
+							} else {
+								location = Integer.parseInt(obj.toString().trim());
+								if (location < content.size()) {
+									object = (JSONObject) content.get(location);
+									list.add(object);
+									FileWriter file = new FileWriter(tname + "_temp.json");
+									file.write("");
+									file.write(list.toJSONString());
+									file.close();
+								}
+							}
+						} else {
+							FileWriter file = new FileWriter(tname + "_temp.json");
+							file.write("");
+							file.write(list.toJSONString());
+							file.close();
+						}
+					} else {
+						System.out.println("Tree not present");
+						return -1;
+					}
+				} else if (opr.equals("<")) {
+					recid = recman.getNamedObject(tname + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						browser = tree.browse(Integer.parseInt(value));
+						while (browser.getNext(tuple)) {
+							String temp = tuple.getValue().toString();
+							if (temp.contains(",")) {
+								String[] objLocs = temp.split(",");
+								for (String str : objLocs) {
+									if (!str.trim().equals("")) {
+										location = Integer.parseInt(str.trim());
+										Object tempkey =  tuple.getKey();
 										if (location < content.size() && tempkey > Float.parseFloat(value)) {
 											object = (JSONObject) content.get(location);
 											list.add(object);
