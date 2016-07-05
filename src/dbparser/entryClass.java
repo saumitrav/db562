@@ -3286,6 +3286,7 @@ public class entryClass {
 				file.write("");
 				file.write(content.toJSONString());
 				file.close();
+				recreateIndexOnCol(tname);
 
 				// }
 			}
