@@ -57,7 +57,7 @@ public class parser {
 		long recid;
 		BTree tree;
 
-		try {
+//		try {
 			if (inSQL.toLowerCase().contains("select")) {
 				String delimSel = "select\\s*|SELECT\\s*";
 				String[] withoutSel = inSQL.split(delimSel);
@@ -434,9 +434,9 @@ public class parser {
 			entry.printTable(tname + "_temp");
 
 			entry.deleteTempTable(tname + "_temp");
-		} catch (Exception e) {
-			System.out.println("Wrong select SQL!");
-		}
+//		} catch (Exception e) {
+//			System.out.println("Wrong select SQL!");
+//		}
 	}
 
 	private static void parseInsert(String inSQL) throws IOException, ParseException {
@@ -591,33 +591,36 @@ public class parser {
 		
 		// creating a temp file to perform operations on
 		entryClass entry = new entryClass();
-		entry.createTempTable(table, table + "_temp");
+//		entry.createTempTable(table, table + "_temp");
 		
 		//applying where conditions
-		if(whereFlag){
-			if(whereFlag){
-				if(andFlag){
-					int ret = entry.searchForSQL(table+"_temp", condList);
-					if (ret == -1){
-						return;
-					}
-				}else if(orFlag){
-					int ret = entry.searchForOrSQL(table+"_temp", condList);
-					if (ret == -1){
-						return;
-					}
+		if (whereFlag) {
+			if (andFlag) {
+				int ret = entry.updateForSQL(table, setList, condList);
+				if (ret == -1) {
+					return;
+				}
+			} else if (orFlag) {
+				int ret = entry.updateForOrSQL(table, setList, condList);
+				if (ret == -1) {
+					return;
 				}
 			}
+		} else {
+			int ret = entry.updateForSQLWithoutCond(table, setList);
+			if (ret == -1) {
+				return;
+			}
 		}
-		
+
 		//get primary keys of values to be updated
-		ArrayList<String> pkeys = entry.getPkeys(table+"_temp");
+//		ArrayList<String> pkeys = entry.getPkeys(table+"_temp");
 		
 		//update table
-		entry.updateSQL(table,setList,pkeys);
+//		entry.updateSQL(table,setList,pkeys);
 		System.out.println("Updated successfully!");
 		
-		entry.deleteTempTable(table + "_temp");
+//		entry.deleteTempTable(table + "_temp");
 	}
 
 	private static void parseDelete(String inSQL) throws IOException, ParseException {
