@@ -112,6 +112,7 @@ public class entryClass {
 		brw2.close();
 
 	}
+	
 
 	public HashMap<String,Integer> returnDataType(String tname) throws IOException{
 		HashMap<String,Integer> dtype = new HashMap<String,Integer>();
@@ -3761,9 +3762,21 @@ public class entryClass {
 		System.out.println("Enter table name to be deleted: ");
 		Scanner sc = new Scanner(System.in);
 		String tname = sc.next();
+		String keyline;
+		long recid;
 		if (!tablename.contains(tname))
 			System.out.println("Table does not exist!");
 		else {
+			recid = recman.getNamedObject( tname+"_btree" );
+			if(recid!=0)recman.delete(recid);
+			BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
+			filekey.readLine();
+			while ((keyline = filekey.readLine()) != null) {
+				String s[] = keyline.split(" ");
+				recid = recman.getNamedObject( tname+"_"+s[0]+"_btree" );
+				if(recid!=0)recman.delete(recid);
+				}
+			filekey.close();
 			tablename.remove(tname);
 			tablekey.remove(tname);
 			File file = new File(tname + "_meta.txt");
