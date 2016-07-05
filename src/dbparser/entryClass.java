@@ -226,69 +226,85 @@ public class entryClass {
 		}
 	}
 
-	private static void recreateIndexOnCol(String tname) throws IOException, ParseException {
+	private static void recreateIndexOnCol(String tname) throws IOException, ParseException
+	{
 		String colname;
-
+		
 		String name;
-		boolean flag = false;
+		boolean flag=false;
 		JSONParser parser = new JSONParser();
 		long recid;
 		BTree tree;
 		int type;
-
-		BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
-		br.readLine();
-		JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
-		int len = content.size();
-		while ((name = br.readLine()) != null) {
-			String s[] = name.split(" ");
-			colname = s[0];
-			type = Integer.parseInt(s[1]);
-
-			// checking if tree already exist
-			recid = recman.getNamedObject(tname + "_" + colname + "_btree");
-			if (recid != 0) {
-				recman.delete(recid);
-
-				if (type == 1)
-					tree = BTree.createInstance(recman, new IntegerComparator());
-				else
-					tree = BTree.createInstance(recman, new StringComparator());
-				recman.setNamedObject(tname + "_" + colname + "_btree", tree.getRecid());
-
-				// load json array
-				if (content != null) {
-					// parsing through jsonarray
-					JSONObject obj = new JSONObject();
+		
+		
+			
+				
+				BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				br.readLine();
+				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+				int len = content.size();
+				while ((name = br.readLine()) != null) {
+					String s[] = name.split(" ");
+					colname=s[0];
+					type=Integer.parseInt(s[1]);
+				
+				
+				
+				//checking if tree already exist
+				recid = recman.getNamedObject( tname+"_"+colname+"_btree" );
+	            if ( recid != 0 ) {
+	            	recman.delete(recid);
+	                
+	               if(type==1)
+	            	   tree = BTree.createInstance( recman, new IntegerComparator() );
+	               else
+	                tree = BTree.createInstance( recman, new StringComparator() );
+	                recman.setNamedObject( tname+"_"+colname+"_btree", tree.getRecid() );
+	            
+	            //load json array
+				
+				if (content != null ) {
+					//parsing through jsonarray
+					JSONObject obj=new JSONObject();
 					String cname;
 					Object object;
 					String forapp;
-					for (Integer i = 0; i < len; i++) {
-						obj = (JSONObject) content.get(i);
-						cname = obj.get(colname).toString();
-						if (type == 1)
-							object = tree.find(Integer.parseInt(cname));
+					for(Integer i=0;i<len;i++)
+					{
+						obj=(JSONObject) content.get(i);
+						cname=obj.get(colname).toString();
+						if(type==1)
+						object=tree.find(Integer.parseInt(cname));	
 						else
-							object = tree.find(cname);
-						if (object == null) {
-							if (type == 1)
-								tree.insert(Integer.parseInt(cname), i, false);
+						object=tree.find(cname);
+						if(object==null)
+						{
+							if(type==1)
+								tree.insert(Integer.parseInt(cname), i, false);	
+							else	
+							tree.insert(cname, i, false);
+						}
+						else{
+							forapp=(String)object.toString();
+							forapp=forapp+","+i.toString();
+							if(type==1)
+							tree.insert(Integer.parseInt(cname), forapp, true);	
 							else
-								tree.insert(cname, i, false);
-						} else {
-							forapp = (String) object.toString();
-							forapp = forapp + "," + i.toString();
-							if (type == 1)
-								tree.insert(Integer.parseInt(cname), forapp, true);
-							else
-								tree.insert(cname, forapp, true);
+							tree.insert(cname, forapp, true);
+							
 						}
 					}
 					recman.commit();
-					System.out.println("Index on column " + colname + " updated");
+					System.out.println("Index on column "+colname+" updated");
+					
 				}
-			}
-		}
+	            }
+				}
+
+				
+				
+		
 	}
 	
 	private static void createJoinTable(String tname1, String tname2) throws IOException {
