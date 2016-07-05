@@ -618,6 +618,7 @@ public class parser {
 		
 		//update table
 //		entry.updateSQL(table,setList,pkeys);
+		entry.recreateIndexOnCol(table);
 		System.out.println("Updated successfully!");
 		
 //		entry.deleteTempTable(table + "_temp");

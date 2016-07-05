@@ -226,7 +226,7 @@ public class entryClass {
 		}
 	}
 
-	private static void recreateIndexOnCol(String tname) throws IOException, ParseException
+	public static void recreateIndexOnCol(String tname) throws IOException, ParseException
 	{
 		String colname;
 		
