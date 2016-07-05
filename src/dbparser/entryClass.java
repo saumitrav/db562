@@ -83,6 +83,7 @@ public class entryClass {
 
 //		searchOnPrimKey("test1", "<", 2);
 //		joinOnPkey("test1","test2");
+		
 
 		/// load all changes to file again
 		FileWriter writer = new FileWriter("tableList.txt");
@@ -138,6 +139,7 @@ public class entryClass {
 		long recid;
 		BTree tree=new BTree();
 		int type = 0;
+		
 		
 		if (!tablename.contains(tname)) {
 			 System.out.println("Table doesn't Exist");
@@ -221,6 +223,83 @@ public class entryClass {
 				
 				
 		}
+	}
+	private static void recreateIndexOnCol(String tname) throws IOException, ParseException
+	{
+		String colname;
+		
+		String name;
+		boolean flag=false;
+		JSONParser parser = new JSONParser();
+		long recid;
+		BTree tree;
+		int type;
+		
+		
+			
+				
+				BufferedReader br = new BufferedReader(new FileReader(tname + "_meta.txt"));
+				br.readLine();
+				JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+				int len = content.size();
+				while ((name = br.readLine()) != null) {
+					String s[] = name.split(" ");
+					colname=s[0];
+					type=Integer.parseInt(s[1]);
+				
+				
+				
+				//checking if tree already exist
+				recid = recman.getNamedObject( tname+"_"+colname+"_btree" );
+	            if ( recid != 0 ) {
+	            	recman.delete(recid);
+	                
+	               if(type==1)
+	            	   tree = BTree.createInstance( recman, new IntegerComparator() );
+	               else
+	                tree = BTree.createInstance( recman, new StringComparator() );
+	                recman.setNamedObject( tname+"_"+colname+"_btree", tree.getRecid() );
+	            
+	            //load json array
+				
+				if (content != null ) {
+					//parsing through jsonarray
+					JSONObject obj=new JSONObject();
+					String cname;
+					Object object;
+					String forapp;
+					for(Integer i=0;i<len;i++)
+					{
+						obj=(JSONObject) content.get(i);
+						cname=obj.get(colname).toString();
+						object=tree.find(cname);
+						if(object==null)
+						{
+							if(type==1)
+								tree.insert(Integer.parseInt(cname), i, false);	
+							else	
+							tree.insert(cname, i, false);
+						}
+						else{
+							forapp=(String)object.toString();
+							forapp=forapp+","+i.toString();
+							if(type==1)
+							tree.insert(Integer.parseInt(cname), forapp, true);	
+							else
+							tree.insert(cname, forapp, true);
+							
+						}
+					}
+					recman.commit();
+					System.out.println("Index on column "+colname+" updated");
+					
+				}
+	            }
+				}
+
+				
+				
+		
 	}
 	private static void createJoinTable(String tname1, String tname2) throws IOException {
 		String name;
@@ -711,6 +790,8 @@ public class entryClass {
 		}
 		return 0;
 	}
+
+	
 
 	private static void writetoKeyMeta() throws IOException {
 		FileWriter writer = new FileWriter("tablekeymeta.txt");
@@ -2978,6 +3059,7 @@ public class entryClass {
 					//
 
 					System.out.println("\n1 record deleted.");
+					recreateIndexOnCol(tname);
 				}
 			} else {
 				System.out.println("\nPrimary key not found. Returning to main menu.");
@@ -3322,6 +3404,36 @@ public class entryClass {
 				tree.insert(key, forapp, true);
 				
 			}
+            
+            recman.commit();
+        }
+	}
+	private static void deleteFromColBTree(String tname,String colname,String key, Integer ind) throws IOException
+	{
+		long recid;
+		BTree tree;
+		Object obj;
+		String forapp;
+		ArrayList<String> al=new ArrayList<>();
+		recid = recman.getNamedObject( tname+"_"+colname+"_btree" );
+        if ( recid != 0 ) {
+            tree = BTree.load( recman, recid );
+            obj=tree.find(key);
+			
+				forapp=(String)obj.toString();
+				String s[]=forapp.split(",");
+				
+				if(s.length<2)
+					tree.remove(key);
+				else{
+					for(int i=0;i<s.length;i++)
+						al.add(s[i]);
+					al.remove(ind.toString());
+					forapp=al.get(0);
+					for(int i=1;i<al.size();i++)
+						forapp=forapp+","+al.get(i);
+					tree.insert(key, forapp, true);
+				}	
             
             recman.commit();
         }
