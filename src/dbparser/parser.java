@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 
 import org.json.simple.parser.ParseException;
 
+import jdbm.btree.BTree;
+
 public class parser {
 	void parseSQL(String inSQL) throws IOException, ParseException {
 		String delims = " ";
@@ -51,6 +53,8 @@ public class parser {
 		boolean andFlag = false;
 		boolean orFlag = false;
 		boolean joinFlag = false;
+		long recid;
+		BTree tree;
 
 		if (inSQL.toLowerCase().contains("select")) {
 			String delimSel = "select\\s*|SELECT\\s*";
@@ -309,6 +313,38 @@ public class parser {
 				condList.remove(cond);
 			}
 			if (andFlag) {
+				if (entry.searchUsingIndex) {
+					ArrayList<String> condToRem = new ArrayList<String>();
+					for (String str : condList) {
+						String delims = "((?<=>|<|=)|(?=>|<|=))";
+						String[] currCond = str.split(delims);
+						if (currCond.length > 3) {
+							System.out.println("Wrong condition in where clause!");
+							entry.searchUsingIndex = false;
+							return;
+						}
+						String columnName = currCond[0].trim();
+						String operator = currCond[1].trim();
+						String valueToSearch = currCond[2].trim();
+						if (valueToSearch.contains("'")) {
+							valueToSearch = valueToSearch.replace("'", "").trim();
+						}
+						recid = entry.recman.getNamedObject(tname + "_" + columnName + "_btree");
+						if (recid != 0) {
+							int ret = entry.searchOnIndexedKey(tname, columnName, operator, valueToSearch);
+							if(ret==-1){
+								System.out.println("Problem in searching by indexed attributes!");
+								entry.searchUsingIndex = false;
+								return;
+							}
+							condToRem.add(str);
+						}
+					}
+					for(String str:condToRem){
+						condList.remove(str);
+					}
+					entry.searchUsingIndex = false;
+				}
 				int ret = entry.searchForSQL(tname+"_temp", condList);
 				if (ret == -1){
 					return;

@@ -44,6 +44,7 @@ public class entryClass {
 	static RecordManager recman;
 	static Properties props;
 	static String DATABASE = "dbproj2";
+	static boolean searchUsingIndex = false;
 	public static void main(String[] args) throws IOException, ParseException {
 
 		/// load file with all table names into arraylist
@@ -441,6 +442,151 @@ public class entryClass {
 		}
 	}
 	
+	public int searchOnIndexedKey(String tname, String attribute, String opr, String value)
+			throws IOException, ParseException {
+		long recid;
+		BTree tree = null;
+		Tuple tuple = new Tuple();
+		TupleBrowser browser;
+		Object obj = null;
+		JSONParser parser = new JSONParser();
+		int location = Integer.MAX_VALUE;
+		if (!tablename.contains(tname)) {
+			// System.out.println("Table doesn't Exist");
+		} else {
+			JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+			JSONArray list = new JSONArray();
+			JSONObject object;
+			if (opr.equals("<") || opr.equals(">") || opr.equals("=")) {
+				if (opr.equals("=")) {
+					recid = recman.getNamedObject(tname + attribute + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						obj = tree.find(value);
+						if (obj != null) {
+							if (obj.toString().contains(",")) {
+								String[] objLocs = obj.toString().split(",");
+								for (String str : objLocs) {
+									if (!str.trim().equals("")) {
+										location = Integer.parseInt(str.trim());
+										if (location < content.size()) {
+											object = (JSONObject) content.get(location);
+											list.add(object);
+											
+										}
+									}
+								}
+								FileWriter file = new FileWriter(tname + "_temp.json");
+								file.write("");
+								file.write(list.toJSONString());
+								file.close();
+								
+							} else {
+								location = Integer.parseInt(obj.toString().trim());
+								if (location < content.size()) {
+									object = (JSONObject) content.get(location);
+									list.add(object);
+									FileWriter file = new FileWriter(tname + "_temp.json");
+									file.write("");
+									file.write(list.toJSONString());
+									file.close();
+								}
+							}
+						} else {
+							FileWriter file = new FileWriter(tname + "_temp.json");
+							file.write("");
+							file.write(list.toJSONString());
+							file.close();
+						}
+					} else {
+						System.out.println("Tree not present");
+						return -1;
+					}
+				} else if (opr.equals(">")) {
+					recid = recman.getNamedObject(tname + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						browser = tree.browse(value);
+						while (browser.getNext(tuple)) {
+							String temp = tuple.getValue().toString();
+							if (temp.contains(",")) {
+								String[] objLocs = temp.split(",");
+								for (String str : objLocs) {
+									if (!str.trim().equals("")) {
+										location = Integer.parseInt(str.trim());
+										float tempkey = (float) tuple.getKey();
+										if (location < content.size() && tempkey > Float.parseFloat(value)) {
+											object = (JSONObject) content.get(location);
+											list.add(object);
+										}
+									}
+								}
+							} else {
+								location = Integer.parseInt(temp.trim());
+								float tempkey = (float) tuple.getKey();
+								if (location < content.size() && tempkey > Float.parseFloat(value)) {
+									object = (JSONObject) content.get(location);
+									list.add(object);
+								}
+							}
+						}
+						FileWriter file = new FileWriter(tname + "_temp.json");
+						file.write("");
+						file.write(list.toJSONString());
+						file.close();
+					} else {
+						System.out.println("Tree not present");
+						return -1;
+					}
+				} else if (opr.equals(">")) {
+					recid = recman.getNamedObject(tname + "_btree");
+					if (recid != 0) {
+						tree = BTree.load(recman, recid);
+					}
+					if (tree != null) {
+						browser = tree.browse(value);
+						while (browser.getPrevious(tuple)) {
+							String temp = tuple.getValue().toString();
+							if (temp.contains(",")) {
+								String[] objLocs = temp.split(",");
+								for (String str : objLocs) {
+									if (!str.trim().equals("")) {
+										location = Integer.parseInt(str.trim());
+										float tempkey = (float) tuple.getKey();
+										if (location < content.size() && tempkey > Float.parseFloat(value)) {
+											object = (JSONObject) content.get(location);
+											list.add(object);
+										}
+									}
+								}
+							} else {
+								location = Integer.parseInt(temp.trim());
+								float tempkey = (float) tuple.getKey();
+								if (location < content.size() && tempkey > Float.parseFloat(value)) {
+									object = (JSONObject) content.get(location);
+									list.add(object);
+								}
+							}
+						}
+						FileWriter file = new FileWriter(tname + "_temp.json");
+						file.write("");
+						file.write(list.toJSONString());
+						file.close();
+					} else {
+						System.out.println("Tree not present");
+						return -1;
+					}
+				} else {
+					 System.out.println("invalid operation");
+				}
+			}
+		}
+		return 0;
+	}
 
 	private static void writetoKeyMeta() throws IOException {
 		FileWriter writer = new FileWriter("tablekeymeta.txt");
@@ -525,10 +671,13 @@ public class entryClass {
 			System.out.println(
 					"4)Insert Record into a Table\n5)Delete Record from a Table\n6)Update Record from a Table\n7)List content of a Table");
 			System.out.println(
-					"8)Search Record for an Attribute\n9)Sort Table\n10)Print B+ tree\n11)Enter SQL command\n12)Mass insert\n13)Create Index on column\n14)Exit");
+					"8)Search Record for an Attribute\n9)Sort Table\n10)Print B+ tree\n11)Enter SQL command\n12)Mass insert");
+			System.out.println("13)Create Index on column\n14)Enter SQL command for search on indexed attributes\n15)Exit");
 			System.out.print("\nEnter your choice : ");
 			Scanner scan = new Scanner(System.in);
 			option = scan.next();
+			parser parse = new parser();
+			
 
 			switch (option) {
 			case "1":
@@ -567,7 +716,7 @@ public class entryClass {
 				scan.nextLine();
 				inSQL = scan.nextLine();
 				long startTime = System.nanoTime();
-				parser parse = new parser();
+//				parser parse = new parser();
 				parse.parseSQL(inSQL);
 				long endTime = System.nanoTime();
 				System.out.println("\nTook " + (endTime - startTime) / 1000000 + " milliseconds.");
@@ -579,18 +728,30 @@ public class entryClass {
 				indexOnCol();
 				break;
 			case "14":
+				String inSQL2;
+				System.out.print("\nEnter the SQL statement : ");
+				scan.nextLine();
+				inSQL2 = scan.nextLine();
+				long startTime2 = System.nanoTime();
+//				parser parse = new parser();
+				searchUsingIndex = true;
+				parse.parseSQL(inSQL2);
+				long endTime2 = System.nanoTime();
+				System.out.println("\nTook " + (endTime2 - startTime2) / 1000000 + " milliseconds.");
+				break;
+			case "15":
 				break;
 			default:
 				System.out.println("Invalid Entry");
 				break;
 
 			}
-			if (!option.equals("14")) {
+			if (!option.equals("15")) {
 				System.out.println("\nPress ENTER to Continue");
 				System.in.read();
 			}
 
-		} while (!option.equals("14"));
+		} while (!option.equals("15"));
 	}
 
 	private static void massInsert() throws IOException, ParseException {
