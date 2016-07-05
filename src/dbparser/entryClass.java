@@ -273,6 +273,9 @@ public class entryClass {
 					{
 						obj=(JSONObject) content.get(i);
 						cname=obj.get(colname).toString();
+						if(type==1)
+						object=tree.find(Integer.parseInt(cname));	
+						else
 						object=tree.find(cname);
 						if(object==null)
 						{
@@ -3481,6 +3484,7 @@ public class entryClass {
 			writetoTableList();
 			writetoKeyMeta();
 			System.out.println("\nTable deleted Successfully ");
+			recman.commit();
 		}
 	}
 	
