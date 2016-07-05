@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.InputMismatchException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -3813,12 +3814,128 @@ public class entryClass {
 				file.write("");
 				file.write(content.toJSONString());
 				file.close();
+				recreateIndexOnCol(tname);
 
 				// }
 			}
 		}
 	}
 
+//	public static int updateForSQLAndS(String tname, ArrayList<String> setList, ArrayList<String> whereConds) throws FileNotFoundException, IOException, ParseException{
+//		
+//		HashMap<String, String> whereopr = new HashMap<>();
+//		HashMap<String, String> whereval = new HashMap<>();
+//		HashMap<String, String> setopr = new HashMap<>();
+//		HashMap<String, String> setval = new HashMap<>();
+//		JSONParser parser = new JSONParser();
+//		JSONArray list=new JSONArray();
+//		JSONObject obj= new JSONObject();
+//		boolean flag=true;
+//		for (String cond : whereConds) {
+//			String delims = "((?<=>|<|=)|(?=>|<|=))";
+//			String[] currCond = cond.split(delims);
+//			if(currCond.length > 3){
+//				System.out.println("Wrong condition in where clause!");
+//				return -1;
+//			}
+//			String columnName = currCond[0].trim();
+//			String operator = currCond[1].trim();
+//			String valueToSearch = currCond[2].trim();
+//			if(valueToSearch.contains("'")){
+//				valueToSearch = valueToSearch.replace("'", "");
+//			whereopr.put(columnName, operator);
+//			whereval.put(columnName, valueToSearch);
+//			}
+//		}
+//		
+//		for (String str : setList) {
+//			String delims = "((?<==)|(?==))";
+//			String[] currSet = str.split(delims);
+//			String columnName = currSet[0].trim();
+//			String operator = currSet[1].trim();
+//			String valueToUpdate = currSet[2].trim();
+//			if (!operator.equals("=")) {
+//				System.out.println("Invalid operator in set: " + str);
+//				break;
+//			}
+//			if (valueToUpdate.contains("'")) {
+//				valueToUpdate = valueToUpdate.replace("'", "");
+//			}
+//			setopr.put(columnName, operator);
+//			setval.put(columnName, valueToUpdate);
+//		}
+//		JSONArray content = (JSONArray) parser.parse(new FileReader(tname + ".json"));
+//		for(int i=0;i<content.size();i++)
+//		{	flag=true;
+//			obj=(JSONObject) content.get(i);
+//			for(Map.Entry<String, String> entry : whereopr.entrySet()){
+//	            if(entry.getValue().equals("="))
+//	            {
+//	            	if(obj.get(entry.getKey()).toString().equals(whereval.get(entry.getKey()).toString()))
+//	            	{
+//	            		
+//	            	}
+//	            	else
+//	            		flag=false;
+//	            }
+//	            if(entry.getValue().equals("<"))
+//	            {
+//	            	String val;
+//	            	Object o;
+//	            	val=obj.get(entry.getKey()).toString();
+//	            	String v;
+//	            	Object ob; 
+//	            	v=whereval.get(entry.getKey()).toString();
+//	            	try{
+//	            		if(Float.parseFloat(val) >= Float.parseFloat(v))
+//	            			flag=false;
+//	            	}
+//	            	catch(Exception e)
+//	            	{
+//	            		if(Integer.parseInt(val)>=Integer.parseInt(v))
+//	            			flag=false;
+//	            	}
+//	            		
+//	            		
+//	            }
+//	            if(entry.getValue().equals(">"))
+//	            {
+//	            	String val;
+//	            	Object o;
+//	            	val=obj.get(entry.getKey()).toString();
+//	            	String v;
+//	            	Object ob; 
+//	            	v=whereval.get(entry.getKey()).toString();
+//	            	try{
+//	            		if(Float.parseFloat(val) <= Float.parseFloat(v))
+//	            			flag=false;
+//	            	}
+//	            	catch(Exception e)
+//	            	{
+//	            		if(Integer.parseInt(val)<=Integer.parseInt(v))
+//	            			flag=false;
+//	            	}
+//	            		
+//	            		
+//	            }
+//	            
+//	            
+//	        }
+//			if(flag==true)
+//			{
+//			
+//				for(Map.Entry<String, String> entry : setval.entrySet()){
+//					
+//					obj.put(entry.getKey(), entry.getValue());
+//				}
+//			}
+//			content.remove(i);
+//			content.add(i, obj);
+//		}
+//		
+//		
+//	}
+			
 	private static void deletefromTable() throws IOException, ParseException {
 
 		System.out.println("Enter Table Name: ");
