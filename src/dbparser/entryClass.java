@@ -1870,6 +1870,7 @@ public class entryClass {
 				recman.commit();
 			}
 			System.out.println("\n1 record deleted.");
+			recreateIndexOnCol(tname);
 			}else{
 				System.out.println("\nPrimary key " + pkeyVal + "not found.");
 			}
@@ -2365,6 +2366,10 @@ public class entryClass {
 						int len = content.size();
 						if (content != null && operatorFlag == true) {
 							if (flag == false) {
+								if(!operator.equals("=")){
+									System.out.println("Wrong operator in where clause.");
+									return -1;
+								}
 								// handling for string data types
 								for (int i = 0; i < len; i++) {
 									obj = (JSONObject) content.get(i);
@@ -2566,7 +2571,10 @@ public class entryClass {
 						int len = content.size();
 						if (content != null && operatorFlag == true) {
 							if (flag == false) {
-
+								if(!operator.equals("=")){
+									System.out.println("Wrong operator in where clause.");
+									return -1;
+								}
 								// handling for string data types
 								for (int i = 0; i < len; i++) {
 									obj = (JSONObject) content.get(i);
