@@ -2307,7 +2307,18 @@ public class entryClass {
 
 		JSONArray content = null;
 		try {
-			content = (JSONArray) parser.parse(new FileReader(tableName.replace("_temp", "") + ".json"));
+			String[] temp = tableName.split("((?<=_)|(?=_))");
+			int count = 0;
+			for (String str : temp) {
+				if (str.equals("_")) {
+					count++;
+				}
+			}
+			if (count > 1) {
+				content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+			} else {
+				content = (JSONArray) parser.parse(new FileReader(tableName.replace("_temp", "") + ".json"));
+			}
 		} catch (ParseException e) {
 			System.out.println("ParseException in search method");
 //			e.printStackTrace();
