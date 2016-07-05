@@ -1374,55 +1374,45 @@ public class entryClass {
 	}
 
 	private static void printBtreeArg(String tname) throws IOException {
-		
+
 		long recid;
 		BTree tree;
 		Tuple tuple = new Tuple();
-        TupleBrowser browser;
-        Scanner sc = new Scanner(System.in);
+		TupleBrowser browser;
+		Scanner sc = new Scanner(System.in);
 		String colname;
-		if(!tablename.contains(tname))
+		if (!tablename.contains(tname))
 			System.out.println("Table doesn't Exist");
-		else{
+		else {
 			System.out.println("Enter column name or P for primary key");
-			colname=sc.next();
+			colname = sc.next();
 			sc.nextLine();
-			if(colname.equalsIgnoreCase("p"))
-			{
-			recid = recman.getNamedObject( tname+"_btree" );
-            if ( recid != 0 ) {
-                tree = BTree.load( recman, recid );
-                System.out.println( "Loaded BTree "+tname+" size " + tree.size() );
-                
-                
-                
-                browser=tree.browse();
-                while ( browser.getNext( tuple ) ) {
-                	System.out.println( tuple.getKey()+" "+tuple.getValue());
-                }
-                
-            }
-		}
-			else{
-				recid = recman.getNamedObject( tname+"_"+colname+"_btree" );
-	            if ( recid != 0 ) {
-	                tree = BTree.load( recman, recid );
-	                System.out.println( "Loaded BTree "+tname+" size " + tree.size() );
-	                         
-	                browser=tree.browse();
-	                while ( browser.getNext( tuple ) ) {
-	                	System.out.println( tuple.getKey()+" "+tuple.getValue());
-	                }
-	                
-	            }
-	            else{
-	            	System.out.println("Index on "+colname+" doesnt exist");
-	            }
-				
+			if (colname.equalsIgnoreCase("p")) {
+				recid = recman.getNamedObject(tname + "_btree");
+				if (recid != 0) {
+					tree = BTree.load(recman, recid);
+					System.out.println("Loaded BTree " + tname + " size " + tree.size());
+
+					browser = tree.browse();
+					while (browser.getNext(tuple)) {
+						System.out.println(tuple.getKey() + " " + tuple.getValue());
+					}
+				}
+			} else {
+				recid = recman.getNamedObject(tname + "_" + colname + "_btree");
+				if (recid != 0) {
+					tree = BTree.load(recman, recid);
+					System.out.println("Loaded BTree " + tname + " size " + tree.size());
+
+					browser = tree.browse();
+					while (browser.getNext(tuple)) {
+						System.out.println(tuple.getKey() + " " + tuple.getValue());
+					}
+				} else {
+					System.out.println("Index on " + colname + " doesnt exist");
+				}
 			}
 		}
-		
-		
 	}
 
 	private static void printBtree() throws IOException {
@@ -3769,7 +3759,7 @@ public class entryClass {
 		else {
 			recid = recman.getNamedObject( tname+"_btree" );
 			if(recid!=0)recman.delete(recid);
-			BufferedReader filekey = new BufferedReader(new FileReader("tablekeymeta.txt"));
+			BufferedReader filekey = new BufferedReader(new FileReader(tname+"_meta.txt"));
 			filekey.readLine();
 			while ((keyline = filekey.readLine()) != null) {
 				String s[] = keyline.split(" ");
@@ -3792,6 +3782,7 @@ public class entryClass {
 			writetoTableList();
 			writetoKeyMeta();
 			System.out.println("\nTable deleted Successfully ");
+			recman.commit();
 		}
 	}
 	
