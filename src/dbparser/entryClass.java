@@ -2501,6 +2501,525 @@ public class entryClass {
 		return 0;
 	}
 	
+	public Object updateObj(String tname, ArrayList<String> attribute, ArrayList<String> values, JSONObject object)
+			throws IOException {
+
+		String name;
+		String pkey = tname + "_pkey";
+		Object value = null;
+		JSONObject newObj = new JSONObject();
+		
+		JSONArray list = new JSONArray();
+		newObj.put(pkey, object.get(pkey).toString());
+		BufferedReader brmeta = new BufferedReader(new FileReader(tname + "_meta.txt"));
+		while ((name = brmeta.readLine()) != null) {
+			String s[] = name.split(" ");
+			if (!s[0].equals(pkey)) {
+				// check if present in attribute
+				if (attribute.contains(s[0])) {
+					int index = attribute.indexOf(s[0]);
+					if (Integer.parseInt(s[1]) == 1) {
+						try {
+							value = Integer.parseInt(values.get(index));
+						} catch (Exception e) {
+							System.out.println("Invalid value: " + values.get(index));
+						}
+					} else if (Integer.parseInt(s[1]) == 2) {
+						try {
+							value = Float.parseFloat(values.get(index));
+						} catch (Exception e) {
+							System.out.println("Invalid value: " + values.get(index));
+						}
+					} else if (Integer.parseInt(s[1]) == 5) {
+						try {
+							value = Boolean.parseBoolean(values.get(index));
+						} catch (Exception e) {
+							System.out.println("Invalid value: " + values.get(index));
+						}
+					} else if (Integer.parseInt(s[1]) == 4) {
+						DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+						Date date = null;
+						try {
+							value = values.get(index);
+							date = format.parse(value.toString());
+						} catch (Exception e) {
+							System.out.println("Invalid value: " + values.get(index));
+						}
+					} else {
+						value = values.get(index);
+					}
+				} else {
+					value = object.get(s[0]);
+				}
+				newObj.put(s[0], value);
+			}
+		}
+		brmeta.close();
+		return newObj;
+	}
+	
+	public int updateForOrSQL(String tableName, ArrayList<String> setList, ArrayList<String> whereConds) {
+		// getting attributes and their updated values in the lists
+		ArrayList<String> attribute = new ArrayList<String>();
+		ArrayList<String> values = new ArrayList<String>();
+
+		for (String str : setList) {
+			String delims = "((?<==)|(?==))";
+			String[] currSet = str.split(delims);
+			String columnName = currSet[0].trim();
+			String operator = currSet[1].trim();
+			String valueToUpdate = currSet[2].trim();
+			if (!operator.equals("=")) {
+				System.out.println("Invalid operator in set: " + str);
+				break;
+			}
+			if (valueToUpdate.contains("'")) {
+				valueToUpdate = valueToUpdate.replace("'", "");
+			}
+			attribute.add(columnName);
+			values.add(valueToUpdate);
+		}
+
+		for (String cond : whereConds) {
+			String delims = "((?<=>|<|=)|(?=>|<|=))";
+			String[] currCond = cond.split(delims);
+			if (currCond.length > 3) {
+				System.out.println("Wrong condition in where clause!");
+				return -1;
+			}
+			String columnName = currCond[0].trim();
+			String operator = currCond[1].trim();
+			String valueToSearch = currCond[2].trim();
+			if (valueToSearch.contains("'")) {
+				valueToSearch = valueToSearch.replace("'", "");
+			}
+
+			JSONArray content = null;
+			JSONArray content2 = null;
+			JSONParser parser = new JSONParser();
+			JSONObject obj;
+			String line = "";
+			boolean flag = false;
+			boolean operatorFlag = false;
+			int checkDataType = 0;
+			ArrayList<String> list = new ArrayList<>();
+
+			if (operator.equals("=") || operator.equals("<") || operator.equals(">")) {
+				operatorFlag = true;
+			} else {
+				System.out.println("Where operator invalid!");
+			}
+
+			if (!tablename.contains(tableName)) {
+				System.out.println("Table does not exist!");
+				return -1;
+			} else {
+				try {
+					BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
+					boolean columnNameFlag = false;
+					while ((line = bufferedReader.readLine()) != null) {
+						String s[] = line.split(" ");
+						list.add(s[0]);
+						if (s[0].equals(columnName)) {
+							columnNameFlag = true;
+							int temp = Integer.parseInt(s[1]);
+							if (temp == 1) {
+								flag = true;
+								checkDataType = 1;
+							} else if (temp == 2) {
+								flag = true;
+								checkDataType = 2;
+							}
+						}
+					}
+					bufferedReader.close();
+
+					if (columnNameFlag == false) {
+						tableName = tableName.replace("_temp", "");
+						System.out.println(
+								"The column name: " + columnName + " does not exist in given table: " + tableName);
+						return -1;
+					} else {
+						try {
+							content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+							content2 = content;
+						} catch (ParseException e) {
+							System.out.println("ParseException in search method");
+							e.printStackTrace();
+						}
+						int len = content.size();
+						if (content != null && operatorFlag == true) {
+							if (flag == false) {
+								if (!operator.equals("=")) {
+									System.out.println("Wrong operator in where clause.");
+									return -1;
+								}
+								// handling for string data types
+								for (int i = 0; i < len; i++) {
+									obj = (JSONObject) content.get(i);
+									if (obj.get(columnName).toString().equals(valueToSearch)) {
+										Object newObj = updateObj(tableName, attribute, values, obj);
+										int index = content2.indexOf(obj);
+										content2.remove(obj);
+										content2.add(index, newObj);
+									}
+								}
+							} else {
+								// handling for Integer
+								if (checkDataType == 1) {
+									try {
+										if (operator.equals("<")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) < Integer
+														.parseInt(valueToSearch)) {
+													Object newObj = updateObj(tableName, attribute, values, obj);
+													int index = content2.indexOf(obj);
+													content2.remove(obj);
+													content2.add(index, newObj);
+												}
+											}
+										} else if (operator.equals(">")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) > Integer
+														.parseInt(valueToSearch)) {
+													Object newObj = updateObj(tableName, attribute, values, obj);
+													int index = content2.indexOf(obj);
+													content2.remove(obj);
+													content2.add(index, newObj);
+												}
+											}
+										} else if (operator.equals("=")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) == Integer
+														.parseInt(valueToSearch)) {
+													Object newObj = updateObj(tableName, attribute, values, obj);
+													int index = content2.indexOf(obj);
+													content2.remove(obj);
+													content2.add(index, newObj);
+												}
+											}
+										}
+									} catch (Exception e) {
+										// System.out.println("The value: " +
+										// valueToSearch + " does not exist in
+										// this table");
+									}
+
+								} else if (checkDataType == 2) {
+									try {
+										if (operator.equals("<")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) < Float
+														.parseFloat(valueToSearch)) {
+													Object newObj = updateObj(tableName, attribute, values, obj);
+													int index = content2.indexOf(obj);
+													content2.remove(obj);
+													content2.add(index, newObj);
+												}
+											}
+										} else if (operator.equals(">")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) > Float
+														.parseFloat(valueToSearch)) {
+													Object newObj = updateObj(tableName, attribute, values, obj);
+													int index = content2.indexOf(obj);
+													content2.remove(obj);
+													content2.add(index, newObj);
+												}
+											}
+										} else if (operator.equals("=")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) == Float
+														.parseFloat(valueToSearch)) {
+													Object newObj = updateObj(tableName, attribute, values, obj);
+													int index = content2.indexOf(obj);
+													content2.remove(obj);
+													content2.add(index, newObj);
+												}
+											}
+										}
+									} catch (Exception e) {
+										// System.out.println("The value: " +
+										// valueToSearch + " does not exist in
+										// this table");
+									}
+								}
+							}
+							FileWriter file = new FileWriter(tableName + ".json");
+							file.write(content2.toJSONString());
+							file.close();
+						} else {
+							System.out.println(
+									"Unable to perform search. Please enter table name, column name and operator values correctly");
+							return -1;
+						}
+					}
+
+				} catch (FileNotFoundException e) {
+					System.out.println("Unable to read file tablekeymeta.txt in search method");
+					// e.printStackTrace();
+					return -1;
+				} catch (IOException io) {
+					System.out.println("IOException in search method");
+					// io.printStackTrace();
+					return -1;
+				}
+			}
+		}
+		return 0;
+	}
+	
+	public int updateForSQL(String tableName, ArrayList<String> setList, ArrayList<String> whereConds) throws FileNotFoundException, IOException, ParseException {
+		// getting attributes and their updated values in the lists
+		ArrayList<String> attribute = new ArrayList<String>();
+		ArrayList<String> values = new ArrayList<String>();
+
+		for (String str : setList) {
+			String delims = "((?<==)|(?==))";
+			String[] currSet = str.split(delims);
+			String columnName = currSet[0].trim();
+			String operator = currSet[1].trim();
+			String valueToUpdate = currSet[2].trim();
+			if (!operator.equals("=")) {
+				System.out.println("Invalid operator in set: " + str);
+				break;
+			}
+			if (valueToUpdate.contains("'")) {
+				valueToUpdate = valueToUpdate.replace("'", "");
+			}
+			attribute.add(columnName);
+			values.add(valueToUpdate);
+		}
+		
+		JSONParser parser = new JSONParser();
+		JSONArray content = null;
+		JSONObject obj;
+		
+		try {
+			content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+		} catch (ParseException e) {
+			System.out.println("ParseException in search method");
+			e.printStackTrace();
+		}
+		
+		JSONArray content2 = new JSONArray();
+		
+		for (String cond : whereConds) {
+			String delims = "((?<=>|<|=)|(?=>|<|=))";
+			String[] currCond = cond.split(delims);
+			if (currCond.length > 3) {
+				System.out.println("Wrong condition in where clause!");
+				return -1;
+			}
+			String columnName = currCond[0].trim();
+			String operator = currCond[1].trim();
+			String valueToSearch = currCond[2].trim();
+			if (valueToSearch.contains("'")) {
+				valueToSearch = valueToSearch.replace("'", "");
+			}
+
+			String line = "";
+			boolean flag = false;
+			boolean operatorFlag = false;
+			int checkDataType = 0;
+			ArrayList<String> list = new ArrayList<>();
+
+			if (operator.equals("=") || operator.equals("<") || operator.equals(">")) {
+				operatorFlag = true;
+			} else {
+				System.out.println("Where operator invalid!");
+			}
+
+			if (!tablename.contains(tableName)) {
+				System.out.println("Table does not exist!");
+				return -1;
+			} else {
+				try {
+					BufferedReader bufferedReader = new BufferedReader(new FileReader(tableName + "_meta.txt"));
+					boolean columnNameFlag = false;
+					while ((line = bufferedReader.readLine()) != null) {
+						String s[] = line.split(" ");
+						list.add(s[0]);
+						if (s[0].equals(columnName)) {
+							columnNameFlag = true;
+							int temp = Integer.parseInt(s[1]);
+							if (temp == 1) {
+								flag = true;
+								checkDataType = 1;
+							} else if (temp == 2) {
+								flag = true;
+								checkDataType = 2;
+							}
+						}
+					}
+					bufferedReader.close();
+
+					if (columnNameFlag == false) {
+						tableName = tableName.replace("_temp", "");
+						System.out.println(
+								"The column name: " + columnName + " does not exist in given table: " + tableName);
+						return -1;
+					} else {
+						int len = content.size();
+						if (content != null && operatorFlag == true) {
+							if (flag == false) {
+								if (!operator.equals("=")) {
+									System.out.println("Wrong operator in where clause.");
+									return -1;
+								}
+								// handling for string data types
+								for (int i = 0; i < len; i++) {
+									obj = (JSONObject) content.get(i);
+									if (obj.get(columnName).toString().equals(valueToSearch)) {
+										content2.add(obj);
+									}
+								}
+							} else {
+								// handling for Integer
+								if (checkDataType == 1) {
+									try {
+										if (operator.equals("<")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) < Integer
+														.parseInt(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										} else if (operator.equals(">")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) > Integer
+														.parseInt(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										} else if (operator.equals("=")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Integer.parseInt(obj.get(columnName).toString()) == Integer
+														.parseInt(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										}
+									} catch (Exception e) {
+										// System.out.println("The value: " +
+										// valueToSearch + " does not exist in
+										// this table");
+									}
+
+								} else if (checkDataType == 2) {
+									try {
+										if (operator.equals("<")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) < Float
+														.parseFloat(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										} else if (operator.equals(">")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) > Float
+														.parseFloat(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										} else if (operator.equals("=")) {
+											for (int i = 0; i < len; i++) {
+												obj = (JSONObject) content.get(i);
+												if (Float.parseFloat(obj.get(columnName).toString()) == Float
+														.parseFloat(valueToSearch)) {
+													content2.add(obj);
+												}
+											}
+										}
+									} catch (Exception e) {
+										// System.out.println("The value: " +
+										// valueToSearch + " does not exist in
+										// this table");
+									}
+								}
+							}
+						} else {
+							System.out.println(
+									"Unable to perform search. Please enter table name, column name and operator values correctly");
+							return -1;
+						}
+					}
+
+				} catch (FileNotFoundException e) {
+					System.out.println("Unable to read file tablekeymeta.txt in search method");
+					// e.printStackTrace();
+					return -1;
+				} catch (IOException io) {
+					System.out.println("IOException in search method");
+					// io.printStackTrace();
+					return -1;
+				}
+			}
+			content=content2;
+			content2=new JSONArray();
+		}
+		
+		content2 = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+		for(int i=0;i<content.size();i++){
+			obj=(JSONObject) content.get(i);
+			Object newObj = updateObj(tableName, attribute, values, obj);
+			int index = content2.indexOf(obj);
+			content2.remove(index);
+			content2.add(index, newObj);
+		}
+		FileWriter file = new FileWriter(tableName + ".json");
+		file.write(content2.toJSONString());
+		file.close();
+		return 0;
+	}
+	
+	public int updateForSQLWithoutCond(String tableName, ArrayList<String> setList) throws IOException, ParseException{
+		ArrayList<String> attribute = new ArrayList<String>();
+		ArrayList<String> values = new ArrayList<String>();
+
+		for (String str : setList) {
+			String delims = "((?<==)|(?==))";
+			String[] currSet = str.split(delims);
+			String columnName = currSet[0].trim();
+			String operator = currSet[1].trim();
+			String valueToUpdate = currSet[2].trim();
+			if (!operator.equals("=")) {
+				System.out.println("Invalid operator in set: " + str);
+				break;
+			}
+			if (valueToUpdate.contains("'")) {
+				valueToUpdate = valueToUpdate.replace("'", "");
+			}
+			attribute.add(columnName);
+			values.add(valueToUpdate);
+		}
+		
+		JSONObject obj;
+		JSONParser parser = new JSONParser();
+		JSONArray content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+		for(int i=0;i<content.size();i++){
+			obj=(JSONObject) content.get(i);
+			Object newObj = updateObj(tableName, attribute, values, obj);
+			content.remove(i);
+			content.add(i, newObj);
+		}
+		FileWriter file = new FileWriter(tableName + ".json");
+		file.write(content.toJSONString());
+		file.close();
+		return 0;
+	}
+	
 	public int searchForSQL(String tableName, ArrayList<String> whereConds) {
 		
 		for (String cond : whereConds) {
