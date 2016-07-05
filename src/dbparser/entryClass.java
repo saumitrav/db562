@@ -124,6 +124,7 @@ public class entryClass {
 		long recid;
 		BTree tree;
 		
+		
 		if (!tablename.contains(tname)) {
 			 System.out.println("Table doesn't Exist");
 		} else {
