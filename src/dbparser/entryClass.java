@@ -2305,6 +2305,15 @@ public class entryClass {
 		}
 		br.close();
 
+		JSONArray content = null;
+		try {
+			content = (JSONArray) parser.parse(new FileReader(tableName.replace("_temp", "") + ".json"));
+		} catch (ParseException e) {
+			System.out.println("ParseException in search method");
+//			e.printStackTrace();
+			return -1;
+		}
+		
 		for (String cond : whereConds) {
 			String delims = "((?<=>|<|=)|(?=>|<|=))";
 			String[] currCond = cond.split(delims);
@@ -2315,7 +2324,6 @@ public class entryClass {
 				valueToSearch = valueToSearch.replace("'", "");
 			}
 
-			JSONArray content = null;
 			boolean flag = false;
 			boolean operatorFlag = false;
 			int checkDataType = 0;
@@ -2357,13 +2365,6 @@ public class entryClass {
 								"The column name: " + columnName + " does not exist in given table: " + tableName.replace("_temp", ""));
 						return -1;
 					} else {
-						try {
-							content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
-						} catch (ParseException e) {
-							System.out.println("ParseException in search method");
-//							e.printStackTrace();
-							return -1;
-						}
 						int len = content.size();
 						if (content != null && operatorFlag == true) {
 							if (flag == false) {
@@ -2479,17 +2480,16 @@ public class entryClass {
 		}
 		
 		//writing the rows found to temp file
-		try {
-			content2 = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
-		} catch (ParseException e) {
-			System.out.println("ParseException in search method");
-//			e.printStackTrace();
-			return -1;
-		}
-		int len = content2.size();
-		if (content2 != null) {
+//		try {
+//			content2 = (JSONArray) parser.parse(new FileReader(tableName.replace("_temp", "") + ".json"));
+//		} catch (ParseException e) {
+//			System.out.println("ParseException in search method");
+//			return -1;
+//		}
+		int len = content.size();
+		if (content != null) {
 			for (int i = 0; i < len; i++) {
-				obj = (JSONObject) content2.get(i);
+				obj = (JSONObject) content.get(i);
 				if (pkeyList.contains(obj.get(pkey).toString())) {
 					content3.add(obj);
 				}
