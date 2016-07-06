@@ -1,2 +1,2 @@
 # db562
-This is the first part of the project as a part of UB Database Systems course in Summer 2016.
+This is the database systems project as a part of UB Database Systems (CSE 562) course in Summer 2016.
