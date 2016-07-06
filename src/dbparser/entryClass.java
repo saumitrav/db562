@@ -1408,23 +1408,27 @@ public class entryClass {
 				recid = recman.getNamedObject(tname + "_btree");
 				if (recid != 0) {
 					tree = BTree.load(recman, recid);
-					System.out.println("Loaded BTree " + tname + " size " + tree.size());
-
+					
 					browser = tree.browse();
 					while (browser.getNext(tuple)) {
 						System.out.println(tuple.getKey() + " " + tuple.getValue());
 					}
+					System.out.println();
+					System.out.println("Loaded BTree " + tname + " size " + tree.size());
+
 				}
 			} else {
 				recid = recman.getNamedObject(tname + "_" + colname + "_btree");
 				if (recid != 0) {
 					tree = BTree.load(recman, recid);
-					System.out.println("Loaded BTree " + tname + " size " + tree.size());
-
+					
 					browser = tree.browse();
 					while (browser.getNext(tuple)) {
 						System.out.println(tuple.getKey() + " " + tuple.getValue());
 					}
+					System.out.println();
+					System.out.println("Loaded BTree " + tname + " size " + tree.size());
+
 				} else {
 					System.out.println("Index on " + colname + " doesnt exist");
 				}
@@ -2318,10 +2322,18 @@ public class entryClass {
 				content = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
 			} else {
 				content = (JSONArray) parser.parse(new FileReader(tableName.replace("_temp", "") + ".json"));
+				content2 = (JSONArray) parser.parse(new FileReader(tableName + ".json"));
+
+				for (int i = 0; i < content2.size(); i++) {
+					JSONObject obj2 = (JSONObject) content2.get(i);
+					if (pkeyList.contains(obj2.get(tableName + "_pkey"))) {
+						pkeyList.add(obj2.get(tableName + "_pkey").toString());
+					}
+				}
 			}
 		} catch (ParseException e) {
 			System.out.println("ParseException in search method");
-//			e.printStackTrace();
+			// e.printStackTrace();
 			return -1;
 		}
 		
