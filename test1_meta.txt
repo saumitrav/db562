@@ -1,0 +1,4 @@
+test1_pkey 1
+id 1
+rate 2
+name 3
